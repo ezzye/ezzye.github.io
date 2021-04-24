@@ -1,6 +1,6 @@
 layout: page
-title: "Contact"
-permalink: /about/contact/
+title: "Contacts"
+permalink: /about/contacts/
 
 @ezzye
 Hackney, London, England, United Kingdom.
