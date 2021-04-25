@@ -1,7 +1,9 @@
+---
 layout: post
-title: "POST TITLE"
+title: "Coding for Equal Justice"
 date: 2021-04-24 17:57:00 -0000
-categories: Home Discrimination
+categories: home discrimination
+---
 
 Are you interested in making a difference?
 
