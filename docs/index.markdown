@@ -2,33 +2,36 @@
 layout: home
 ---
 
-On 17th May at 10 pm on Channel 4, there is a TV programme, [“The Truth About Stop and Search”](https://www.channel4.com/programmes/the-truth-about-police-stop-search).
+The truth about police stop and search is that the police disproportionately target black and minority ethnicities.
+
+There are TV programmes about it, for example 17th May at 10 pm on Channel 4, [“The Truth About Stop and Search”](https://www.channel4.com/programmes/the-truth-about-police-stop-search).
 &nbsp;
 &nbsp;
 
-I witnessed this outside of my home:
+I've seen it outside of my house, [see the videoed incident here](https://www.youtube.com/watch?v=w8e34-zDOys)
 &nbsp;
 
 ![](/assets/images/mq1.jpeg)
-
-[Black man in a posh car pulls up to park outside his house](https://www.youtube.com/watch?v=w8e34-zDOys).
 &nbsp;
 
-If the powerless owned the BBC, the media would make a difference, but they don’t.
+Respectful and tolerant societies are typically the most harmonious.
 
-I am a coder, so I want to take direct action to gain equal human rights using code.
+Diversity is proven to boost innovation.
+
+Being treated differently or unfairly because of your race, skin colour, or ethnicity can negatively affect your mental health.
+
+And it is unfair and unjust.
+
+So what can we do?
+
+Accept it and live in an intolerant unjust society or make a change.
 
 I want to form an organisation that would help to make a difference by coding an app.
-This would be a way for like-minded junior and senior software engineers and data analysts to make a difference.
-A way of taking direct action in the fight for equal justice for all whatever their community or heritage.
 
-The goal is to form an organisation, codingForJustice, open to all, Black or white, male or female, neurotypical or Neurodiverse, straight or gay and whatever your pro-noun.
-With the aim is to harness volunteer coders and coding-beginners to write and deploy applications that make a difference.
+An organisation, codingForJustice, open to all to harness volunteers to develop applications that make a difference.
 
-The first project is to write an app that allows the victims of discrimination to record incidents, make complaints, report to media outlets and get help and support of charities.
+For example, an app that allows a victim of targeted police "stop and search" to record the incident and, if necessary, make a complaint, get help and support via social media.
 
-If you want to help or find out more information please join or contact me.
+If you want to help or find out more information, please contact, direct message me on Twitter @ezzye.
 
 &nbsp;
-
-
