@@ -6,5 +6,8 @@ permalink: /about/join/
 
 Twitter handle @ezzye
 
-how to join:
-DM me. We can arrange a Twitter spaces to get started.
+How to join:
+
+DM (direct message) me(@ezzye) on Twitter. 
+
+We can arrange a Twitter 'spaces' meeting.
