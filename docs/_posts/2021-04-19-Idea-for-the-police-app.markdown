@@ -4,26 +4,21 @@ title:  "Idea for the Stop and Search App"
 date:   2021-04-19 17:22:03 +0100
 categories: stop and search app
 ---
-You’ll find this post in your `_posts` directory. Go ahead and edit it and re-build the site to see your changes. You can rebuild the site in many different ways, but the most common way is to run `jekyll serve`, which launches a web server and auto-regenerates your site when a file is updated.
+![Twitter bot](/assets/images/codingForJusticeIdea.png)
 
-Jekyll requires blog post files to be named according to the following format:
+As a law-abiding citizen, I want to legally fightback against being racially profiled and target by a police stop and search.
 
-`YEAR-MONTH-DAY-title.MARKUP`
+I want to be able to make an official complaint, contact MP and campaign groups, and promote fight against racial injustice.
 
-Where `YEAR` is a four-digit number, `MONTH` and `DAY` are both two-digit numbers, and `MARKUP` is the file extension representing the format used in the file. After that, include the necessary front matter. Take a look at the source for this post to get an idea about how it works.
+I want to be able to do this by:
+ 1. Tweeting video/link and description of the stop and search and mentioning @FightStopNSearch account to report the incident.
+ 2. Following and accepting DMs (Direct Messages) from @FightStopNSearch to start an official complaint.
+ 3. Communicate by DMs (Direct Messages) with @FightStopNSearch to manage the official complaint.
+ 4. Empowering @FightStopNSearch to use Hashtags and mentions to contact MPs and campaign groups on my behalf.
 
-Jekyll also offers powerful support for code snippets:
+One way of implementing this would be to write and maintain a 'Twitter bot'.
 
-{% highlight ruby %}
-def print_hi(name)
-  puts "Hi, #{name}"
-end
-print_hi('Tom')
-#=> prints 'Hi, Tom' to STDOUT.
-{% endhighlight %}
+For longevity the development could be done by a non-profit voluntary social enterprise governed by a board of trustees.
 
-Check out the [Jekyll docs][jekyll-docs] for more info on how to get the most out of Jekyll. File all bugs/feature requests at [Jekyll’s GitHub repo][jekyll-gh]. If you have questions, you can ask them on [Jekyll Talk][jekyll-talk].
+Direct message (DM) me on Twitter [@ezzye](https://twitter.com/ezzye) or email me at [codingForJustice@itsHackney.com](codingForJustice@itsHackney.com) to join or find out more.
 
-[jekyll-docs]: https://jekyllrb.com/docs/home
-[jekyll-gh]:   https://github.com/jekyll/jekyll
-[jekyll-talk]: https://talk.jekyllrb.com/

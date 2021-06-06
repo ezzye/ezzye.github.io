@@ -4,8 +4,4 @@ title: "Contacts"
 permalink: /about/contacts/
 ---
 
-Twitter handle: @ezzye
-Location - Hackney, London, England, United Kingdom.
-
-How to contact me and how to join:
-DM(direct message) on Twitter.
+Direct message (DM) me on Twitter [@ezzye](https://twitter.com/ezzye) or email me at [codingForJustice@itsHackney.com](codingForJustice@itsHackney.com) to join or find out more.

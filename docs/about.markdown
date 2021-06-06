@@ -4,14 +4,15 @@ title: About
 permalink: /about/
 ---
 
-I’m based in Hackney, London.  I was previously the founder of the UK Black Accountants Society.  I work for the BBC as a software developer.
-I am also a qualified accountant. I converted to software development via Makers Academy in Shoreditch, Hackney, London.
+I’m a Hackney based BBC software developer qualified accountant.  Years ago I founded Black Accountants Society in UK.
+I previously attended Makers Academy in Shoreditch and Manchester University.
 
-I am autistic and also campaign for neurodiversity.
+I also campaign for diversity especially neurodiversity.
 
-As a coder, I want to take direct action for equal human rights using code.
+codingForJustice is an attempt to make change by coding an app to empower the public rather than just talking and campaining on issues.
 
-I feel people need to stand up and take direct action.
-Black, white, male or female, rich or poor we all have equal human rights.
+Direct message (DM) me on Twitter [@ezzye](https://twitter.com/ezzye) or email me at [codingForJustice@itsHackney.com](codingForJustice@itsHackney.com) to join or find out more.
+
+
 
 

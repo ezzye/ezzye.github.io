@@ -6,8 +6,6 @@ permalink: /about/join/
 
 Twitter handle @ezzye
 
-How to join:
+If you have any ideas or can code, please contact me.  I want to have an initial meeting in June 2021.
 
-DM (direct message) me(@ezzye) on Twitter. 
-
-We can arrange a Twitter 'spaces' meeting.
+Direct message (DM) me on Twitter [@ezzye](https://twitter.com/ezzye) or email me at [codingForJustice@itsHackney.com](codingForJustice@itsHackney.com) to join or find out more.
