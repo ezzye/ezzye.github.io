@@ -1640,21 +1640,31 @@ export async function updateActionResponseStatus(
 export async function deleteActionResponse(id: string): Promise<boolean> {
   await purgeDueActionResponses();
   const row = await env.DB.prepare(
-    `SELECT action_id, status FROM action_responses WHERE id = ?`,
+    `SELECT action_id, invite_id, status FROM action_responses WHERE id = ?`,
   )
     .bind(id)
     .first<{
       action_id: string;
+      invite_id: string | null;
       status: AdminActionResponse['status'];
     }>();
   if (!row) return false;
 
-  const deleted = await env.DB.prepare(
-    `DELETE FROM action_responses WHERE id = ?`,
-  )
-    .bind(id)
-    .run();
-  if (Number(deleted.meta.changes ?? 0) < 1) return false;
+  const statements = [
+    env.DB.prepare(`DELETE FROM action_responses WHERE id = ?`).bind(id),
+  ];
+  if (row.invite_id) {
+    statements.push(
+      env.DB.prepare(
+        `DELETE FROM action_invites
+         WHERE id = ? AND NOT EXISTS (
+           SELECT 1 FROM action_responses WHERE invite_id = ?
+         )`,
+      ).bind(row.invite_id, row.invite_id),
+    );
+  }
+  const results = await env.DB.batch(statements);
+  if (Number(results[0]?.meta.changes ?? 0) < 1) return false;
 
   if (row.status !== 'rejected') {
     await env.DB.prepare(

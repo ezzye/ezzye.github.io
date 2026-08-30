@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { retentionCronRequestIsAuthorized } from '../lib/retention-cron-auth.ts';
+import {
+  normalizeRetentionCronSecret,
+  retentionCronRequestIsAuthorized,
+} from '../lib/retention-cron-auth.ts';
 
 const secret = 'a'.repeat(64);
 
@@ -26,4 +29,15 @@ void test('the retention route accepts only the exact configured bearer secret',
     await retentionCronRequestIsAuthorized(secret, `Bearer ${secret}`),
     true,
   );
+  assert.equal(
+    await retentionCronRequestIsAuthorized(`  ${secret}  `, `Bearer ${secret}`),
+    true,
+  );
+});
+
+void test('the Site and timer share one URL-safe secret format', () => {
+  assert.equal(normalizeRetentionCronSecret(`  ${secret}  `), secret);
+  assert.equal(normalizeRetentionCronSecret('a'.repeat(42)), null);
+  assert.equal(normalizeRetentionCronSecret('a'.repeat(129)), null);
+  assert.equal(normalizeRetentionCronSecret(`${'a'.repeat(61)}+/=`), null);
 });

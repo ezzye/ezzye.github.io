@@ -1,6 +1,12 @@
-const MINIMUM_SECRET_LENGTH = 43;
-const MAXIMUM_SECRET_LENGTH = 128;
+const SECRET_PATTERN = /^[A-Za-z0-9_-]{43,128}$/;
 const BEARER_PATTERN = /^Bearer ([A-Za-z0-9_-]+)$/;
+
+export function normalizeRetentionCronSecret(
+  value: string | undefined,
+): string | null {
+  const normalized = value?.trim() ?? '';
+  return SECRET_PATTERN.test(normalized) ? normalized : null;
+}
 
 async function digest(value: string): Promise<Uint8Array> {
   const bytes = new TextEncoder().encode(value);
@@ -20,16 +26,11 @@ export async function retentionCronRequestIsAuthorized(
   configuredSecret: string | undefined,
   authorizationHeader: string | null,
 ): Promise<boolean> {
-  const expected = configuredSecret?.trim() ?? '';
-  const supplied = BEARER_PATTERN.exec(authorizationHeader ?? '')?.[1] ?? '';
-  if (
-    expected.length < MINIMUM_SECRET_LENGTH ||
-    expected.length > MAXIMUM_SECRET_LENGTH ||
-    supplied.length < MINIMUM_SECRET_LENGTH ||
-    supplied.length > MAXIMUM_SECRET_LENGTH
-  ) {
-    return false;
-  }
+  const expected = normalizeRetentionCronSecret(configuredSecret);
+  const supplied = normalizeRetentionCronSecret(
+    BEARER_PATTERN.exec(authorizationHeader ?? '')?.[1],
+  );
+  if (!expected || !supplied) return false;
   const [expectedDigest, suppliedDigest] = await Promise.all([
     digest(expected),
     digest(supplied),

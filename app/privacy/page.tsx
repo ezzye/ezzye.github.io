@@ -27,10 +27,11 @@ export default function PrivacyPage() {
         <p className="eyebrow">Privacy</p>
         <h1>Private means private.</h1>
         <p>
-          Your full form answer does not go online and cannot be the source of a
-          public result. This site adds no public accounts, comments, analytics
-          trackers or file uploads. The hosting service can still keep security,
-          device and operating logs.
+          Your full form answer does not go public. It may guide a page edit,
+          but we do not publish it, quote it or claim it proves anything. This
+          site adds no public accounts, comments, analytics trackers or file
+          uploads. The hosting service can still keep security, device and
+          operating logs.
         </p>
       </header>
       <section className="page-section prose-page">
@@ -45,8 +46,9 @@ export default function PrivacyPage() {
         <p>
           The first home-page test uses one-use links. We store a scrambled
           version of each link in the site database, whether it was used, and
-          its closing time. The link record is erased after it expires, or when
-          the owner stops and erases the test. The test page does not send its
+          its closing time. An unused link record is erased after it expires. A
+          used link record is erased with its full answer, or sooner when the
+          owner stops and erases the test. The test page does not send its
           address on to pages you open from it.
         </p>
         <h2>Why we keep it</h2>
@@ -79,10 +81,11 @@ export default function PrivacyPage() {
           checked rules before any public draft can be made.
         </p>
         <p>
-          The home-page test stays private. Its answers, totals, themes and
-          individual words cannot be used as the source of a public result. A
-          separate public result must stand on a public evidence page that
-          anyone can open without signing in.
+          The home-page test stays private. Replies may guide an edit to the
+          public home page. We will not publish an answer, quote, total, theme
+          or claim that this small test proves anything. Any separate public
+          result must stand on a public evidence page that anyone can open
+          without signing in.
         </p>
         <h2>AI and who else may handle the data</h2>
         <p>
@@ -102,11 +105,11 @@ export default function PrivacyPage() {
         {pilotPrivacy ? (
           <>
             <p>
-              Full home-page test answers must be deleted by the end of{' '}
-              <strong>{pilotPrivacy.responseDeleteDate}</strong> (UK time). Each
-              saved answer carries that deadline. After it passes, the workshop
-              will not show the answer and the next site request tries to erase
-              it.
+              Each full home-page test answer has a deletion deadline at the end
+              of <strong>{pilotPrivacy.responseDeleteDate}</strong> (UK time).
+              The timer checks every 15 minutes and erases answers whose
+              deadline has passed. A site request also tries the same cleanup.
+              If the timer is late or has failed, the test shuts to new replies.
             </p>
             <p>
               The owner also has one button to stop the test and erase every

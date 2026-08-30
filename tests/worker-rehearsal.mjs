@@ -19,6 +19,7 @@ function futureDate(daysAway) {
 
 const reviewDate = futureDate(14);
 const deleteDate = futureDate(30);
+const retentionSecret = 'r'.repeat(64);
 const server = createTestHarness({
   root: projectRoot,
   workers: [
@@ -37,6 +38,7 @@ const server = createTestHarness({
         PILOT_INVITE_APPROVAL_REFERENCE: 'INVENTED-REHEARSAL-ONLY',
         PILOT_RECRUITMENT_PLAN: 'One invented one-use link at a time',
         PILOT_REPLY_READER: 'Rehearsal owner',
+        RETENTION_CRON_SECRET: retentionSecret,
       },
     },
   ],
@@ -60,14 +62,19 @@ try {
   const environment = await worker.getEnv();
   const database = environment.DB;
 
-  async function request(path, { method = 'GET', body, admin = false } = {}) {
+  async function request(
+    path,
+    { method = 'GET', body, admin = false, authorization } = {},
+  ) {
+    const requestHeaders = admin
+      ? { ...adminHeaders }
+      : body === undefined
+        ? {}
+        : { 'content-type': 'application/json' };
+    if (authorization) requestHeaders.authorization = authorization;
     const response = await server.fetch(path, {
       method,
-      headers: admin
-        ? adminHeaders
-        : body === undefined
-          ? undefined
-          : { 'content-type': 'application/json' },
+      headers: requestHeaders,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const text = await response.text();
@@ -89,10 +96,7 @@ try {
     'https://coding-for-justice.ezzye.chatgpt.site/',
   );
   assert.equal(generatedHome.status, 200);
-  assert.equal(
-    generatedHome.headers.get('x-robots-tag'),
-    'noindex, nofollow',
-  );
+  assert.equal(generatedHome.headers.get('x-robots-tag'), 'noindex, nofollow');
   const publicHome = await server.fetch('https://codingforjustice.org.uk/');
   assert.equal(publicHome.status, 200);
   assert.equal(publicHome.headers.get('x-robots-tag'), null);
@@ -124,11 +128,41 @@ try {
   });
   assert.equal(beforeHeartbeat.response.status, 409, beforeHeartbeat.text);
 
-  const firstSweep = await worker.scheduled({
-    cron: '*/15 * * * *',
-    scheduledTime: new Date(),
+  const retentionStateBeforeAuth = await database
+    .prepare(
+      `SELECT
+         (SELECT COUNT(*) FROM retention_sweeps) AS sweeps,
+         (SELECT COUNT(*) FROM retention_events) AS events`,
+    )
+    .first();
+  const missingSecret = await request('/api/internal/retention', {
+    method: 'POST',
   });
-  assert.equal(firstSweep.outcome, 'ok');
+  assert.equal(missingSecret.response.status, 404, missingSecret.text);
+  assert.equal(
+    missingSecret.response.headers.get('cache-control'),
+    'private, no-store',
+  );
+  const wrongSecret = await request('/api/internal/retention', {
+    method: 'POST',
+    authorization: `Bearer ${'w'.repeat(64)}`,
+  });
+  assert.equal(wrongSecret.response.status, 404, wrongSecret.text);
+  const retentionStateAfterRejectedAuth = await database
+    .prepare(
+      `SELECT
+         (SELECT COUNT(*) FROM retention_sweeps) AS sweeps,
+         (SELECT COUNT(*) FROM retention_events) AS events`,
+    )
+    .first();
+  assert.deepEqual(retentionStateAfterRejectedAuth, retentionStateBeforeAuth);
+
+  assertOk(
+    await request('/api/internal/retention', {
+      method: 'POST',
+      authorization: `Bearer ${retentionSecret}`,
+    }),
+  );
   const firstHeartbeat = await database
     .prepare(
       `SELECT last_completed_at, last_error_at, run_count
@@ -228,6 +262,43 @@ try {
   );
   assert.ok(secondToken);
 
+  const withdrawalInvite = await request('/api/admin/action-invites', {
+    method: 'POST',
+    admin: true,
+    body: { actionId: 'CFJ-A004' },
+  });
+  assertOk(withdrawalInvite, 201);
+  const withdrawalToken = new URL(
+    withdrawalInvite.json.invite.url,
+  ).searchParams.get('invite');
+  assert.ok(withdrawalToken);
+  const withdrawalReply = await request('/api/action-responses', {
+    method: 'POST',
+    body: { ...replyBody, inviteToken: withdrawalToken },
+  });
+  assertOk(withdrawalReply, 201);
+  assertOk(
+    await request(
+      `/api/admin/action-responses/${withdrawalReply.json.reference}`,
+      { method: 'DELETE', admin: true },
+    ),
+  );
+  const withdrawalState = await database
+    .prepare(
+      `SELECT
+         (SELECT COUNT(*) FROM action_responses WHERE id = ?) AS replies,
+         (SELECT COUNT(*) FROM action_invites WHERE id = ?) AS invites`,
+    )
+    .bind(withdrawalReply.json.reference, withdrawalInvite.json.invite.id)
+    .first();
+  assert.deepEqual(
+    {
+      replies: Number(withdrawalState.replies),
+      invites: Number(withdrawalState.invites),
+    },
+    { replies: 0, invites: 0 },
+  );
+
   await database
     .prepare(
       `CREATE TRIGGER rehearsal_fail_retention
@@ -238,19 +309,20 @@ try {
        END`,
     )
     .run();
-  const failedSweep = await worker.scheduled({
-    cron: '*/15 * * * *',
-    scheduledTime: new Date(),
+  const failedSweep = await request('/api/internal/retention', {
+    method: 'POST',
+    authorization: `Bearer ${retentionSecret}`,
   });
-  assert.notEqual(failedSweep.outcome, 'ok');
+  assert.equal(failedSweep.response.status, 500, failedSweep.text);
   const failedHeartbeat = await database
     .prepare(
-      `SELECT last_completed_at, last_error_at
+      `SELECT last_completed_at, last_error_at, run_count
        FROM retention_sweeps WHERE id = 'action_responses'`,
     )
     .first();
   assert.ok(failedHeartbeat?.last_completed_at);
   assert.ok(failedHeartbeat?.last_error_at);
+  assert.equal(Number(failedHeartbeat?.run_count), 3);
   assert.ok(
     Date.parse(failedHeartbeat.last_error_at) >=
       Date.parse(failedHeartbeat.last_completed_at),
@@ -357,7 +429,7 @@ try {
   assert.equal(Number(afterIdempotent.last_records_deleted), 0);
 
   process.stdout.write(
-    `${JSON.stringify({ ok: true, checks: 41, responseId })}\n`,
+    `${JSON.stringify({ ok: true, checks: 55, responseId })}\n`,
   );
 } catch (error) {
   failed = true;

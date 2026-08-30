@@ -1,3 +1,5 @@
+import { normalizeRetentionCronSecret } from '../../../lib/retention-cron-auth.ts';
+
 export type RetentionTimerEnv = {
   RETENTION_ENDPOINT_URL: string;
   RETENTION_CRON_SECRET: string;
@@ -26,16 +28,17 @@ export async function sendRetentionHeartbeat(
   environment: RetentionTimerEnv,
   fetcher: Fetcher = fetch,
 ): Promise<void> {
-  if (environment.RETENTION_CRON_SECRET.trim().length < 43) {
-    throw new Error('The retention timer secret is missing or too short.');
-  }
+  const secret = normalizeRetentionCronSecret(
+    environment.RETENTION_CRON_SECRET,
+  );
+  if (!secret) throw new Error('The retention timer secret is not valid.');
   const response = await fetcher(
     checkedEndpoint(environment.RETENTION_ENDPOINT_URL),
     {
       method: 'POST',
       headers: {
         accept: 'application/json',
-        authorization: `Bearer ${environment.RETENTION_CRON_SECRET}`,
+        authorization: `Bearer ${secret}`,
       },
       redirect: 'error',
     },

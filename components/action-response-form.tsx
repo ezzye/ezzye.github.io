@@ -54,9 +54,10 @@ export function ActionResponseForm({
       <div className="direct-response-success">
         <FormStatus state={state} />
         <p>
-          Thank you. We will use the replies only to decide whether this page
-          needs changing. We will not publish your answers or a result based on
-          them. Keep your reference if you may want us to remove your reply.
+          Thank you. Your replies may guide an edit to the home page. We will
+          not publish your answer, quote it, report totals or themes, or claim
+          that this small test proves anything. Keep your reference if you may
+          want us to remove your reply.
         </p>
       </div>
     );
@@ -141,8 +142,9 @@ export function ActionResponseForm({
           Do not add names, contact details, case details, or facts about
           anyone&apos;s health, disability, race, religion, politics, trade
           union, sex life or sexuality. We do not record your screen, voice or
-          face. Your answers stay private and cannot be the source of a public
-          result.
+          face. Your replies may guide a home-page edit, but we will not publish
+          them, quote them, report totals or themes, or claim this test proves
+          anything.
         </FieldDescription>
       </FieldGroup>
       <Button
