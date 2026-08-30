@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   },
   description:
     'A public workshop for turning repeatable unfair processes into practical, evidenced repairs.',
+  icons: {
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    shortcut: '/favicon.svg',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_GB',
