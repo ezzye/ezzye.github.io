@@ -27,19 +27,27 @@ the owner approves the exact private test and Cloudflare is connected.
 
 The safe order is:
 
-1. Create a new Worker and a new empty D1 test database. Never copy the Sites
+1. Check that the Cloudflare account already has a `workers.dev` account
+   namespace. Cloudflare requires the namespace before it will attach a Cron
+   Trigger, even when this Worker's own `workers.dev` route is off. If it is
+   missing, stop and ask before creating it: that is a separate account change.
+   Never turn on this Worker's route or preview URLs.
+2. Create a new Worker and a new empty D1 test database. Never copy the Sites
    database.
-2. Apply the normal migrations and check that only the made-up demonstration is
-   present.
-3. Deploy the Worker with its timer but **no web address**. Keep `workers.dev`
+3. Apply the normal migrations and check the exact code-owned fixtures. A fresh
+   database contains repairs `CFJ-R001` and `CFJ-R002` and actions `CFJ-A001`
+   through `CFJ-A004`. `CFJ-R002` is marked non-demo because it is the private
+   home-page preview, but it is still fixed source content with no participant
+   data. There must be no replies, invitations, proposals, offers or appeals.
+4. Deploy the Worker with its timer but **no web address**. Keep `workers.dev`
    off, preview addresses off and all domain routes absent.
-4. Record the source commit, built package, Worker version, database name and
+5. Record the source commit, built package, Worker version, database name and
    starting heartbeat count.
-5. Wait through Cloudflare's timer setup delay, then wait for two full
+6. Wait through Cloudflare's timer setup delay, then wait for two full
    15-minute slots. Do not press a test button and call that an automatic run.
-6. Save two Cloudflare timer events and two database checks. The heartbeat must
+7. Save two Cloudflare timer events and two database checks. The heartbeat must
    move forward twice, finish without an error and contain no reply text.
-7. Stop if either run is missing, late or broken. Invitations stay shut.
+8. Stop if either run is missing, late or broken. Invitations stay shut.
 
 That is the whole timer test. Owner web access is a later step, not part of the
 first deployment.
@@ -121,6 +129,19 @@ The real build deliberately fails if the D1 UUID is absent, malformed, the
 Sites placeholder or the rehearsal UUID. There is no one-command live deploy
 script.
 
+Every live database command must name the generated canary config and say
+`--remote`. Without `--remote`, Wrangler may use a local throw-away database
+and give false reassurance. The migration command is:
+
+```sh
+./node_modules/.bin/wrangler d1 migrations apply DB --remote \
+  --config dist/server/wrangler.json
+```
+
+Use the same `DB --remote --config dist/server/wrangler.json` target for the
+content-free fixture counts and each heartbeat check. Record counts only; do
+not copy reply words or other private fields into test evidence.
+
 After the owner-only Access application and secrets have been checked, the
 private web package uses the same D1 UUID with:
 
@@ -140,3 +161,10 @@ previous Worker and record a D1 recovery bookmark before a risky change.
 The canary never becomes the public domain by accident. A future Cloudflare
 public-hosting choice would need a new plan because the domain is not currently
 on Cloudflare DNS. Do not reuse the old Sites DNS packet for that move.
+
+If first deployment reports Cloudflare error `10063`, the script version may
+have uploaded but the timer did not. Do not call that a pass and do not keep
+retrying. Confirm there are no deployed web targets and no heartbeat, then ask
+before initialising the account's `workers.dev` namespace. After that separate
+approval, deploy the same checked config again and verify both the production
+route and version preview routing are disabled before waiting for Cron.
