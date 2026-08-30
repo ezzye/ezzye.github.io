@@ -1,0 +1,127 @@
+# Coding for Justice phase-one implementation plan
+
+## Outcome
+
+Phase one turns Coding for Justice from a static statement into a small fairness repair workshop. It must prove one complete loop:
+
+`listen → frame → act → check → publish → review`
+
+The site succeeds when one partner-backed repair is adopted, deliberately changed, or stopped for an evidence-backed reason. Traffic and reaction counts are not success measures.
+
+## Users and jobs
+
+- A community organisation brings one recurring administrative or digital barrier.
+- An affected person helps define the problem and judge the result without having to publish a personal story.
+- A contributor offers one bounded skill or task rather than joining an endless volunteer queue.
+- A service owner can see the evidence, respond and own a next step.
+- The founder can triage private proposals, change public workflow state and publish an outcome without editing code.
+
+## Phase-one product
+
+### Public
+
+- Homepage with one current repair, one useful action and one outcome.
+- Repair ledger showing what is known, unknown and disputed.
+- Action cards with time, output, owner, reviewer and completion evidence.
+- Outcome ledger distinguishing activity, observed effect and independent verification.
+- Covenant, moderation, correction, privacy and appeal routes.
+- Private forms for proposing a repair, offering help and requesting a review.
+- A clearly labelled fictional demonstration until the first partner repair passes the launch gate.
+
+### Protected
+
+- ChatGPT sign-in for the review area.
+- An explicit administrator email allowlist configured in hosting.
+- Proposal and appeal triage.
+- Repair and action state updates.
+- Human-reviewed outcome publication.
+- A finish queue that reduces the current repair to one bounded next action.
+- An optional DeepSeek Flash steward that drafts a weekly brief from public
+  ledger data only; every result remains private until a human adopts it.
+
+### Deliberately absent
+
+- Public accounts, comments, likes, follower counts or popularity ranking.
+- Direct messages, public accusation walls or file uploads.
+- Legal advice, emergency handling or whistleblowing.
+- Automatic AI publication or transfer of private submissions, offers, appeals
+  or contact details to another provider.
+- Open youth mentoring, payments or a general volunteer marketplace.
+
+## Data boundaries
+
+Public repair data is separate from private submissions. A proposal never becomes public automatically. Publishing requires a new, redacted public record and human approval.
+
+The intake does not request addresses, credentials, identity numbers, case numbers or detailed medical, financial, immigration or legal records. Phase one accepts public source links but no uploads. Private data is stored in the managed database and deleted according to the published retention rule.
+
+## Technical shape
+
+- Server-rendered React application using the OpenAI Sites runtime.
+- Managed D1 database for repairs, actions, outcomes and private intake records.
+- Dispatch-owned ChatGPT sign-in for the protected review area.
+- Server-side validation, request-size limits, honeypots and rate limiting on public forms.
+- Human-readable URLs and server-rendered content for resilience and search.
+- Optional `deepseek-v4-flash` server-side drafting behind the protected workshop.
+  It receives only already-public repair, action, update and outcome fields, is
+  limited to three runs per repair per day, and cannot publish.
+- A deterministic finish queue remains available when no model credential is configured.
+
+## Delivery stages
+
+### Stage 1 — safe foundation
+
+- Publish the covenant and operating boundaries.
+- Add the fictional demonstration repair and outcome.
+- Make all public and private record types explicit.
+- Validate accessibility, privacy language and moderation routes.
+- Configure the model secret only after the private deployment passes review;
+  never put it in source control or browser code.
+
+### Stage 2 — partner-gated proof
+
+- Hold six discovery conversations from 20–25 tailored invitations.
+- Select one repeatable process with an affected-person reviewer and an adoption owner.
+- Replace the demonstration as the homepage lead only after consent, evidence and publication review.
+- Run one 90-day repair with a weekly Workshop Note and dated Repair Receipt.
+
+### Stage 3 — decision
+
+- Continue if there is a useful outcome or meaningful institutional response, safe contributor experience, a maintenance owner and sustainable founder workload.
+- Iterate if the process is useful but the intervention fails.
+- Stop or narrow if demand becomes individual casework, safety cannot be maintained or no institution will own a response.
+
+## Repository and hosting migration
+
+- Preserve `ezzye/ezzye.github.io` `master` and legacy commit `a511d1455720fc18082c85caf0d81570a694c829` as the rollback baseline.
+- Put the new application on a separate review branch before any Pages change.
+- Deploy to managed hosting and verify its generated URL before touching DNS.
+- Preserve every old URL or redirect it to a labelled archive.
+- At cutover, change only the apex GitHub Pages A records and the `www` CNAME.
+- Do not alter Hover nameservers, MX, `mail`, the OpenAI verification TXT or `share.codingforjustice.org.uk`.
+- Verify apex HTTPS, `www`, legacy paths, email DNS and the Vibe share route before calling the migration complete.
+- Roll back by restoring the four GitHub Pages A records and `www` CNAME if the new apex fails.
+
+## Launch gate
+
+Do not replace the fictional repair with a real one until all are true:
+
+- one partner and one responsible owner are named;
+- an affected-person reviewer has decision rights;
+- the scope excludes emergencies, active legal cases and uncontrolled sensitive data;
+- the baseline and desired change are measurable;
+- the publication and consent agreement is complete;
+- the maintenance or hand-off owner is known;
+- the covenant, correction and appeal routes have been tested.
+
+## Acceptance criteria
+
+- The first mobile viewport explains the proposition and shows a current repair.
+- A reader can follow repair → action → outcome and distinguish known, unknown and verified claims.
+- Forms remain private, preserve accessible error messages and never auto-publish.
+- An authorised reviewer can triage submissions and change workflow states without a redeploy.
+- The finish queue always names one next output, time-box, evidence requirement
+  and stop condition; model-assisted briefs are visibly drafts.
+- Every action has an owner, evidence requirement, review date and stop condition.
+- Every outcome states what changed, what did not and the confidence level.
+- No engagement ranking, public comments or private-data exposure exists.
+- Build, keyboard, reflow, contrast, HTTPS, security-header and legacy-route checks pass before cutover.
