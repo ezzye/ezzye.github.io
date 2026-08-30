@@ -11,9 +11,12 @@
     "start": "wrangler dev --config dist/server/wrangler.json",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "test:maintainer-rehearsal": "node tests/maintainer-rehearsal.mjs",
-    "lint": "oxlint app components db lib tests --ignore-pattern 'components/ui/**'",
+    "lint": "oxlint app components db lib scripts tests --ignore-pattern 'components/ui/**'",
     "format": "oxfmt",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "db:check": "drizzle-kit check",
+    "verify:release": "npm test && npm run lint && npm run db:check && npm run build",
+    "check:public": "node scripts/check-public-site.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",

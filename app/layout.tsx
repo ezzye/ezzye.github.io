@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+
+import { PUBLIC_ORIGIN } from '@/lib/site-origin';
+
 import './globals.css';
 
 const geistSans = Geist({
@@ -13,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://codingforjustice.org.uk'),
+  metadataBase: new URL(PUBLIC_ORIGIN),
   title: {
     default: 'Coding for Justice — Small jobs that fix unfair things',
     template: '%s — Coding for Justice',

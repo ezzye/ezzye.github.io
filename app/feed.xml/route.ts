@@ -1,4 +1,5 @@
 import { getLatestOutcomes, getPublicRepairs } from '@/db/queries';
+import { PUBLIC_ORIGIN } from '@/lib/site-origin';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +12,8 @@ function escapeXml(value: string) {
     .replaceAll("'", '&apos;');
 }
 
-export async function GET(request: Request) {
-  const origin = new URL(request.url).origin;
+export async function GET() {
+  const origin = PUBLIC_ORIGIN;
   const [repairs, outcomes] = await Promise.all([
     getPublicRepairs(),
     getLatestOutcomes(20),

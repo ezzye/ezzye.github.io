@@ -24,10 +24,15 @@ partner, make the Site public or change DNS until the rows for that step say
 | Publish  | Exact weekly Workshop Note and permission to make it visible          | —              | Site owner        | Not authorised | —           | —        |
 | Publish  | Exact Repair Receipt and permission to publish it                     | —              | Site owner        | Not authorised | —           | —        |
 | Outreach | People or groups, exact message and permission to send                | —              | Site owner        | Not authorised | —           | —        |
-| Public   | Permission to choose “Anyone on the internet”                         | —              | Site owner        | Not authorised | —           | —        |
-| Public   | Exact Sites DNS values and before/after record diff                   | —              | Site owner        | Not captured   | —           | —        |
+| Public   | Working public privacy contact and honest reply time                  | —              | Site owner        | Not decided    | —           | —        |
+| Public   | Packet A: exact version, evidence and expiry                          | —              | Site owner        | Not approved   | —           | —        |
+| Public   | Permission to expose that version at the generated address only       | —              | Site owner        | Not authorised | —           | —        |
+| Public   | Acceptance of unsigned generated-address checks                       | —              | Site owner        | Not accepted   | —           | —        |
+| Public   | Canonical hostname (`codingforjustice.org.uk` is proposed)             | —              | Site owner        | Not decided    | —           | —        |
+| Public   | Packet B: exact Sites DNS values, Hover export and record diff         | —              | Site owner        | Partly captured; export missing; refresh required | — | [Cutover plan](PUBLIC_CUTOVER.md) |
 | Public   | Permission to apply that exact DNS change                             | —              | Site owner        | Not authorised | —           | —        |
-| Public   | Ongoing site, inbox and database maintainer                           | —              | Site owner        | Not decided    | —           | —        |
+| Public   | Rollback triggers, authority and tested HTTPS fallback                | —              | Site owner        | Not ready      | —           | —        |
+| Public   | Maintainer, deputy, cadence and absence rule                           | —              | Site owner        | Not decided    | —           | [Maintenance](MAINTENANCE.md) |
 
 Do not put invitees' names or contact details in this file, the repository, the
 Site database or a Repair Receipt. Record only the agreed recruitment rules and

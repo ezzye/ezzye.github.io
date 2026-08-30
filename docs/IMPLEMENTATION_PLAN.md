@@ -24,10 +24,15 @@
 - Next: the owner must complete and approve the choices in
   [LAUNCH_DECISIONS.md](LAUNCH_DECISIONS.md). Until then the real test stays
   locked.
-- Later: public access and the domain change require a separate approval and the
-  checks in [PUBLIC_CUTOVER.md](PUBLIC_CUTOVER.md).
+- Prepared, not authorised: the current GitHub route, exact pending Sites DNS
+  values, staged public-access approval, rollback triggers and maintenance
+  routine are recorded in [PUBLIC_CUTOVER.md](PUBLIC_CUTOVER.md) and
+  [PUBLIC_RELEASE_PACKET.md](PUBLIC_RELEASE_PACKET.md). The old GitHub
+  custom-domain HTTPS fallback is broken and must be repaired or replaced
+  before DNS approval.
 
 The day-to-day pilot steps are in [PILOT_RUNBOOK.md](PILOT_RUNBOOK.md).
+The low-effort upkeep routine is in [MAINTENANCE.md](MAINTENANCE.md).
 
 ## Outcome
 
@@ -130,7 +135,8 @@ The intake does not request addresses, credentials, identity numbers, case numbe
 - Preserve `ezzye/ezzye.github.io` `master` and legacy commit `a511d1455720fc18082c85caf0d81570a694c829` as the rollback baseline.
 - Put the new application on a separate review branch before any Pages change.
 - Deploy to managed hosting and verify its generated URL before touching DNS.
-- Preserve every old URL or redirect it to a labelled archive.
+- Preserve every old public content route or redirect it to a labelled archive;
+  the source-backed inventory is in [LEGACY_URLS.md](LEGACY_URLS.md).
 - Treat [PUBLIC_CUTOVER.md](PUBLIC_CUTOVER.md) as the one authoritative DNS
   record, cutover and rollback plan. It requires an exact before/after diff from
   Sites before approval and preserves every mail, nameserver and unrelated TXT

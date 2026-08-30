@@ -25,7 +25,9 @@ The owner-only rehearsal and any later, separately authorised five-person test
 use [the first-five runbook](docs/PILOT_RUNBOOK.md). Human choices are recorded
 in [the launch decision register](docs/LAUNCH_DECISIONS.md). The separately
 approved domain move and rollback steps are in
-[the public cutover plan](docs/PUBLIC_CUTOVER.md).
+[the public cutover plan](docs/PUBLIC_CUTOVER.md), with one exact
+[release packet](docs/PUBLIC_RELEASE_PACKET.md). The small weekly and monthly
+routine is in [maintenance](docs/MAINTENANCE.md).
 
 ## Local development
 

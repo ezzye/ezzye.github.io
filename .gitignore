@@ -38,3 +38,6 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# refreshed at each approval boundary; never push launch-time values
+/release/PUBLIC_RELEASE_*.md

@@ -1,5 +1,7 @@
 import type { NextConfig } from 'next';
 
+import { SITES_GENERATED_HOST } from './lib/site-origin.ts';
+
 const securityHeaders = [
   {
     key: 'Content-Security-Policy',
@@ -26,13 +28,20 @@ const securityHeaders = [
   },
   {
     key: 'Strict-Transport-Security',
-    value: 'max-age=31536000; includeSubDomains',
+    // Keep this short until the old rollback host and mail subdomain both have
+    // valid HTTPS. includeSubDomains would currently break Hover webmail.
+    value: 'max-age=300',
   },
 ];
 
 const nextConfig: NextConfig = {
   async headers() {
     return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', key: SITES_GENERATED_HOST }],
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
       { source: '/', headers: securityHeaders },
       { source: '/:path*', headers: securityHeaders },
     ];
