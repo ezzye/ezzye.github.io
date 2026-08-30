@@ -31,6 +31,7 @@ void test('the route-less timer calls only the approved HTTPS endpoint', async (
     'https://codingforjustice.org.uk/api/internal/retention',
   );
   assert.equal(call.init?.method, 'POST');
+  assert.equal(call.init?.redirect, 'manual');
   assert.equal(
     new Headers(call.init?.headers).get('authorization'),
     `Bearer ${secret}`,

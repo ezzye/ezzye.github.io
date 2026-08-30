@@ -40,7 +40,7 @@ export async function sendRetentionHeartbeat(
         accept: 'application/json',
         authorization: `Bearer ${secret}`,
       },
-      redirect: 'error',
+      redirect: 'manual',
     },
   );
   if (!response.ok) {
