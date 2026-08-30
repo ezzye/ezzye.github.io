@@ -81,8 +81,10 @@ The intake does not request addresses, credentials, identity numbers, case numbe
 - Server-side validation, request-size limits, honeypots and rate limiting on public forms.
 - Human-readable URLs and server-rendered content for resilience and search.
 - Optional `deepseek-v4-flash` server-side drafting behind the protected workshop.
-  It receives only already-public repair, action, update and outcome fields, is
-  limited to three runs per repair per day, and cannot publish.
+  It receives only an explicit allowlist of already-public repair, action,
+  update and outcome fields. Owner-only approvals, recruitment plans, reply
+  readers and private intake records cannot enter its payload. It is limited to
+  three runs per repair per day and cannot publish.
 - A deterministic finish queue remains available when no model credential is configured.
 
 ## Delivery stages
