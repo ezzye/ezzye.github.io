@@ -177,9 +177,10 @@ export default function PrivacyPage() {
           </p>
         ) : (
           <p>
-            This is still a rehearsal. A named data owner, all details above and
-            a full privacy check must be recorded before a real link is made. Do
-            not share test links or send private case files.
+            This is still a read-only rehearsal. The test&apos;s lawful basis,
+            recipients, deletion date and full privacy check must be recorded
+            before a real invitation is made. Do not share test links or send
+            private case files.
           </p>
         )}
       </section>
