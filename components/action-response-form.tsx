@@ -20,11 +20,15 @@ export function ActionResponseForm({
   inviteToken,
   questions,
   disabledReason,
+  dataOwner,
+  responseDeleteDate,
 }: {
   actionId: string;
   inviteToken?: string;
   questions: string[];
   disabledReason?: string;
+  dataOwner?: string;
+  responseDeleteDate?: string;
 }) {
   const { state, submit } = usePrivateForm('/api/action-responses');
   const [consentPrivateUse, setConsentPrivateUse] = useState(false);
@@ -50,9 +54,9 @@ export function ActionResponseForm({
       <div className="direct-response-success">
         <FormStatus state={state} />
         <p>
-          Thank you. We will read your answers. When the test closes, we will
-          say what we learned and whether we changed the page. Keep your
-          reference if you may want us to remove your reply.
+          Thank you. We will use the replies only to decide whether this page
+          needs changing. We will not publish your answers or a result based on
+          them. Keep your reference if you may want us to remove your reply.
         </p>
       </div>
     );
@@ -125,16 +129,20 @@ export function ActionResponseForm({
             aria-invalid={Boolean(state.fields.consentPrivateUse)}
             disabled={Boolean(disabledReason)}
           />
-          You may use my full answers for this private test. They will not be
-          posted. Needed to send.{' '}
+          I agree that {dataOwner ?? 'the site data owner'} may use my answers
+          only to check and improve this home page. They stay private and will
+          be deleted by {responseDeleteDate ?? 'the date on the privacy page'}.
+          I can withdraw before then. Needed to send.{' '}
           <Link href="/privacy" target="_blank" referrerPolicy="no-referrer">
             Read how we use and delete your answers.
           </Link>
         </label>
         <FieldDescription>
-          Do not add your name, diagnosis, case details or another person&apos;s
-          private story. We do not record your screen, voice or face. Your
-          answers stay private and cannot be the source of a public result.
+          Do not add names, contact details, case details, or facts about
+          anyone&apos;s health, disability, race, religion, politics, trade
+          union, sex life or sexuality. We do not record your screen, voice or
+          face. Your answers stay private and cannot be the source of a public
+          result.
         </FieldDescription>
       </FieldGroup>
       <Button

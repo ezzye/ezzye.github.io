@@ -28,8 +28,9 @@ export default function PrivacyPage() {
         <h1>Private means private.</h1>
         <p>
           Your full form answer does not go online and cannot be the source of a
-          public result. This site has no public accounts, comments, trackers or
-          file uploads.
+          public result. This site adds no public accounts, comments, analytics
+          trackers or file uploads. The hosting service can still keep security,
+          device and operating logs.
         </p>
       </header>
       <section className="page-section prose-page">
@@ -37,15 +38,16 @@ export default function PrivacyPage() {
         <p>
           We keep what you type in a form, your choices and your email if you
           give it to us. The home-page test asks for no name or email. We also
-          keep a small record to stop spam. Do not send passwords, case numbers,
-          medical notes, witness statements or files.
+          keep a scrambled connection record to stop spam. It expires after one
+          hour and the timer removes old records. Do not send passwords, case
+          numbers, medical notes, witness statements or files.
         </p>
         <p>
           The first home-page test uses one-use links. We store a scrambled
           version of each link in the site database, whether it was used, and
-          its closing time. The hosting service may also keep security and
-          operating logs. The test page does not send its address on to pages
-          you open from it.
+          its closing time. The link record is erased after it expires, or when
+          the owner stops and erases the test. The test page does not send its
+          address on to pages you open from it.
         </p>
         <h2>Why we keep it</h2>
         <p>
@@ -84,8 +86,9 @@ export default function PrivacyPage() {
         </p>
         <h2>AI and who else may handle the data</h2>
         <p>
-          AI is off for private answers. We must name the tool, say what it will
-          do and ask first before sending it anyone’s words.
+          AI is off for private answers. We do not send them to DeepSeek,
+          ChatGPT or another AI tool. OpenAI still hosts this ChatGPT Site for
+          us; that is hosting, not asking an AI model to read the answers.
         </p>
         {pilotPrivacy ? (
           <p>{pilotPrivacy.recipients}</p>
@@ -110,6 +113,12 @@ export default function PrivacyPage() {
               full answer early. The deletion log keeps only the number erased
               and the dates, never the answers. Ending the private test and
               writing any public result are separate jobs.
+            </p>
+            <p>
+              The date covers the test database and any owner copy. OpenAI may
+              keep separate security and operating logs only as long as needed
+              to run, secure and support the hosting service under its data
+              processing terms.
             </p>
           </>
         ) : (
@@ -150,11 +159,11 @@ export default function PrivacyPage() {
           </p>
         ) : contactEmail && dataOwner && replyTime ? (
           <p>
-            <strong>{dataOwner}</strong> is responsible for the site data.
-            Email <a href={`mailto:${contactEmail}`}>{contactEmail}</a>{' '}
-            about privacy, access, deletion or an access problem. We aim to
-            reply {replyTime}. Forms and private tests stay shut until their
-            separate privacy, permission and staffing checks are complete.
+            <strong>{dataOwner}</strong> is responsible for the site data. Email{' '}
+            <a href={`mailto:${contactEmail}`}>{contactEmail}</a> about privacy,
+            access, deletion or an access problem. We aim to reply {replyTime}.
+            Forms and private tests stay shut until their separate privacy,
+            permission and staffing checks are complete.
           </p>
         ) : contactEmail ? (
           <p>

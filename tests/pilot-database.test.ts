@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 import { RESERVE_ACTION_INVITE_SQL } from '../lib/action-invite-sql.ts';
 import {
+  DELETE_EXPIRED_ACTION_INVITES_SQL,
+  DELETE_EXPIRED_RATE_LIMITS_SQL,
   DELETE_DUE_ACTION_RESPONSES_SQL,
   REVOKE_DUE_RESPONSE_INVITES_SQL,
   STOP_DUE_RESPONSE_ACTIONS_SQL,
@@ -373,6 +375,44 @@ void test('fresh migrations enforce invitation integrity and capacity', () => {
       .trim()
       .split('\n');
     assert.deepEqual(earlierPolicyState, ['0', '1']);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+void test('retention cleanup removes expired bearer links and anti-spam rows', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'cfj-pilot-cleanup-db-'));
+  const database = join(directory, 'test.sqlite');
+  try {
+    applySql(database, migrationSql(migrationNames));
+    applySql(
+      database,
+      `
+        INSERT INTO action_invites (
+          id, action_id, token_hash, expires_at, created_at
+        ) VALUES (
+          'invite_expired', 'CFJ-A004', '${'e'.repeat(64)}',
+          '2026-08-29T12:00:00.000Z', '2026-08-28T12:00:00.000Z'
+        );
+        INSERT INTO rate_limits (key, count, reset_at)
+        VALUES ('expired-key', 1, 1);
+        ${bindRetention(
+          DELETE_EXPIRED_ACTION_INVITES_SQL,
+          '2026-08-30T12:00:00.000Z',
+        )}
+        ${bindNumberedSql(DELETE_EXPIRED_RATE_LIMITS_SQL, [2])}
+      `,
+    );
+    const state = execFileSync('sqlite3', [database], {
+      input: `
+        SELECT COUNT(*) FROM action_invites WHERE id = 'invite_expired';
+        SELECT COUNT(*) FROM rate_limits WHERE key = 'expired-key';
+      `,
+    })
+      .toString()
+      .trim()
+      .split('\n');
+    assert.deepEqual(state, ['0', '0']);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

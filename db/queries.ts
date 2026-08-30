@@ -13,6 +13,8 @@ import {
   pilotClosingInstant,
 } from '@/lib/pilot-rules';
 import {
+  DELETE_EXPIRED_ACTION_INVITES_SQL,
+  DELETE_EXPIRED_RATE_LIMITS_SQL,
   DELETE_DUE_ACTION_RESPONSES_SQL,
   DUE_ACTION_RESPONSE_PREDICATE,
   REVOKE_DUE_RESPONSE_INVITES_SQL,
@@ -1375,6 +1377,10 @@ export async function purgeDueActionResponses(
     database
       .prepare(DELETE_DUE_ACTION_RESPONSES_SQL)
       .bind(completedAt, policyCutoff),
+    database.prepare(DELETE_EXPIRED_ACTION_INVITES_SQL).bind(completedAt),
+    database
+      .prepare(DELETE_EXPIRED_RATE_LIMITS_SQL)
+      .bind(Math.floor(now.getTime() / 1_000)),
   ]);
   if (Number(results[0]?.meta.changes ?? 0) !== 1) return null;
   const event = await database
@@ -1497,6 +1503,12 @@ export async function stopAndDeletePilotResponses(
     ).bind(completedAt, repairId),
     env.DB.prepare(
       `DELETE FROM action_responses
+       WHERE action_id IN (
+         SELECT id FROM action_cards WHERE repair_id = ?
+      )`,
+    ).bind(repairId),
+    env.DB.prepare(
+      `DELETE FROM action_invites
        WHERE action_id IN (
          SELECT id FROM action_cards WHERE repair_id = ?
        )`,

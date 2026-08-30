@@ -20,3 +20,13 @@ WHERE action_id IN (
 
 export const DELETE_DUE_ACTION_RESPONSES_SQL = `DELETE FROM action_responses
 WHERE ${DUE_ACTION_RESPONSE_PREDICATE}`;
+
+export const DELETE_EXPIRED_ACTION_INVITES_SQL = `DELETE FROM action_invites
+WHERE datetime(expires_at) <= datetime(?1)
+  AND NOT EXISTS (
+    SELECT 1 FROM action_responses ar
+    WHERE ar.invite_id = action_invites.id
+  )`;
+
+export const DELETE_EXPIRED_RATE_LIMITS_SQL = `DELETE FROM rate_limits
+WHERE reset_at < ?1`;

@@ -12,7 +12,10 @@ import {
   actionInviteTokenLooksValid,
   hashActionInviteToken,
 } from '@/lib/action-invites';
-import { pilotRuntimeIsReady } from '@/lib/public-intake';
+import {
+  getPilotPrivacyConfiguration,
+  pilotRuntimeIsReady,
+} from '@/lib/public-intake';
 
 export const metadata: Metadata = {
   title: 'Does the home page make sense?',
@@ -42,6 +45,7 @@ export default async function HomePageTest({
   const inviteToken =
     typeof params.invite === 'string' ? params.invite.trim() : '';
   const runtimeReady = pilotRuntimeIsReady(action, retentionSweep);
+  const pilotPrivacy = getPilotPrivacyConfiguration();
   const inviteState =
     runtimeReady &&
     !action.isPreview &&
@@ -113,6 +117,8 @@ export default async function HomePageTest({
           inviteToken={isOpen ? inviteToken : undefined}
           questions={action.responseQuestions}
           disabledReason={disabledReason}
+          dataOwner={pilotPrivacy?.dataOwner}
+          responseDeleteDate={pilotPrivacy?.responseDeleteDate}
         />
       </section>
     </SiteShell>

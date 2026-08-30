@@ -1,0 +1,17 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "coding-for-justice-retention-timer",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-30",
+  "workers_dev": false,
+  "preview_urls": false,
+  "triggers": {
+    "crons": ["*/15 * * * *"],
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    "RETENTION_ENDPOINT_URL": "https://codingforjustice.org.uk/api/internal/retention",
+  },
+}

@@ -96,6 +96,10 @@ and review forms shut during the five-person test.
 5. Send one reminder at most.
 6. Make the next link only when the next person agrees.
 
+Do not make or export all five links in advance. The readable link is shown
+only once and works like a key. Keeping one unused key at a time makes it clear
+which link to stop if somebody changes their mind.
+
 Choose a mix of phones and computers. Choose people who accept the diversity,
 equity and inclusion (DEI), care and no-pile-on ground rule and who will say
 when the page is bad.

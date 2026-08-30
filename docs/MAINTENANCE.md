@@ -85,3 +85,16 @@ named backup or a clear rule that closes the relevant form.
 
 The useful rhythm is: **one repair, one next job, one check date, one person who
 can stop it.**
+
+## The live deletion timer
+
+The public Site exposes one locked internal POST route. A separate route-less
+Cloudflare Worker calls it every 15 minutes with a shared secret. The Worker has
+no `workers.dev` address, preview address or custom route. The Site rejects a
+missing or wrong secret without running the deletion job.
+
+Keep the same strong `RETENTION_CRON_SECRET` in Sites and in the timer Worker.
+Never put it in Git, a release note, a screenshot or a command transcript. If
+either copy changes, rotate both and deploy the Site environment revision before
+calling the timer healthy. Two unattended heartbeat increments in the Site's
+own `retention_sweeps` table are the minimum live proof.

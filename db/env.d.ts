@@ -19,6 +19,7 @@ declare namespace Cloudflare {
     PILOT_INVITE_APPROVAL_REFERENCE?: string;
     PILOT_RECRUITMENT_PLAN?: string;
     PILOT_REPLY_READER?: string;
+    RETENTION_CRON_SECRET?: string;
     DEEPSEEK_API_KEY?: string;
   }
 }

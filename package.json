@@ -16,7 +16,7 @@
     "test:worker": "node tests/worker-rehearsal.mjs",
     "test:maintainer-rehearsal": "node tests/maintainer-harness.mjs",
     "test:maintainer-rehearsal:running": "node tests/maintainer-rehearsal.mjs",
-    "lint": "oxlint app components db lib scripts tests worker --ignore-pattern 'components/ui/**'",
+    "lint": "oxlint app components db lib operations scripts tests worker --ignore-pattern 'components/ui/**'",
     "typecheck": "tsc --noEmit --incremental false",
     "format": "oxfmt",
     "check:vinext": "vinext check",
