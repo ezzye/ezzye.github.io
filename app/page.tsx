@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Check } from 'lucide-react';
 
@@ -41,22 +42,42 @@ export default async function Home() {
   return (
     <SiteShell>
       <section className="plain-home" aria-labelledby="home-title">
-        <div className="plain-intro">
-          <p className="plain-kicker">Start here</p>
-          <h1 id="home-title">Pick a small job. Help fix something unfair.</h1>
-          <div className="plain-answers">
-            <p>
-              <strong>What is this?</strong> A to-do list for fixing bad forms,
-              rules and services.
-            </p>
-            <p>
-              <strong>Why should I care?</strong> Bad forms and rules can shut
-              people out. You may know the problem or have a skill that helps.
-            </p>
-            <p>
-              <strong>What do I do?</strong> Pick one of the three boxes below.
-            </p>
+        <div className="plain-opening">
+          <div className="plain-intro">
+            <p className="plain-kicker">Start here</p>
+            <h1 id="home-title">
+              Pick a small job. Help fix something unfair.
+            </h1>
+            <div className="plain-answers">
+              <p>
+                <strong>What is this?</strong> A to-do list for fixing bad
+                forms, rules and services.
+              </p>
+              <p>
+                <strong>Why should I care?</strong> Bad forms and rules can shut
+                people out. You may know the problem or have a skill that helps.
+              </p>
+              <p>
+                <strong>What do I do?</strong> Pick one of the three boxes
+                below.
+              </p>
+            </div>
           </div>
+
+          <figure className="warm-photo">
+            <Image
+              src="/people-working-together.jpg"
+              width="1400"
+              height="933"
+              alt="Four people sitting round a table and working on a paper form together."
+              priority
+              unoptimized
+            />
+            <figcaption>
+              <strong>People, not clicks.</strong> This is an AI-made scene, not
+              a real Coding for Justice group.
+            </figcaption>
+          </figure>
         </div>
 
         <section className="choice-block" aria-labelledby="choice-title">
