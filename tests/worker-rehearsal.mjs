@@ -85,6 +85,18 @@ try {
   assert.equal(home.response.status, 200, home.text);
   assert.match(home.text, /Pick a small job\. Help fix something unfair\./);
 
+  const generatedHome = await server.fetch(
+    'https://coding-for-justice.ezzye.chatgpt.site/',
+  );
+  assert.equal(generatedHome.status, 200);
+  assert.equal(
+    generatedHome.headers.get('x-robots-tag'),
+    'noindex, nofollow',
+  );
+  const publicHome = await server.fetch('https://codingforjustice.org.uk/');
+  assert.equal(publicHome.status, 200);
+  assert.equal(publicHome.headers.get('x-robots-tag'), null);
+
   assertOk(
     await request('/api/admin/actions/CFJ-A004', {
       method: 'PATCH',
@@ -345,7 +357,7 @@ try {
   assert.equal(Number(afterIdempotent.last_records_deleted), 0);
 
   process.stdout.write(
-    `${JSON.stringify({ ok: true, checks: 37, responseId })}\n`,
+    `${JSON.stringify({ ok: true, checks: 41, responseId })}\n`,
   );
 } catch (error) {
   failed = true;

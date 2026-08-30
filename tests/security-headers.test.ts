@@ -2,6 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import nextConfig from '../next.config.ts';
+import {
+  generatedSiteResponse,
+  SITES_GENERATED_HOST,
+} from '../lib/site-origin.ts';
 
 void test('does not force broken mail and rollback subdomains onto HTTPS', async () => {
   assert.equal(typeof nextConfig.headers, 'function');
@@ -28,4 +32,29 @@ void test('does not force broken mail and rollback subdomains onto HTTPS', async
   assert.deepEqual(noindexRule?.headers, [
     { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
   ]);
+});
+
+void test('marks only the generated Sites address as noindex at the Worker boundary', async () => {
+  const generated = generatedSiteResponse(
+    new Request(`https://${SITES_GENERATED_HOST}/repairs`),
+    new Response('private preview', {
+      headers: { 'Cache-Control': 'no-store' },
+    }),
+  );
+  assert.equal(
+    generated.headers.get('x-robots-tag'),
+    'noindex, nofollow',
+  );
+  assert.equal(generated.headers.get('cache-control'), 'no-store');
+  assert.equal(await generated.text(), 'private preview');
+
+  const publicResponse = new Response('public site');
+  assert.equal(
+    generatedSiteResponse(
+      new Request('https://codingforjustice.org.uk/repairs'),
+      publicResponse,
+    ),
+    publicResponse,
+  );
+  assert.equal(publicResponse.headers.get('x-robots-tag'), null);
 });

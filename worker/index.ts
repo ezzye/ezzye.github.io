@@ -9,6 +9,7 @@ import {
   privateCanaryLogoutResponse,
   privateCanaryResponse,
 } from '@/lib/cloudflare-access';
+import { generatedSiteResponse } from '@/lib/site-origin';
 
 export default {
   async fetch(
@@ -18,7 +19,8 @@ export default {
   ) {
     const configuredGate = environment.AUTH_GATE?.trim();
     if (!configuredGate) {
-      return vinextHandler.fetch(request, environment, context);
+      const response = await vinextHandler.fetch(request, environment, context);
+      return generatedSiteResponse(request, response);
     }
     if (!privateCanaryAuthIsEnabled(environment)) {
       return privateCanaryDeniedResponse();
