@@ -18,11 +18,16 @@
   separate built-Worker rehearsal checks the scheduled deletion job against a
   throw-away database. This is local proof, not proof that hosted scheduling is
   running.
-- Not proved: the owner-only Site has not recorded an automatic hosted deletion
-  heartbeat. A separate, route-less Cloudflare timer test is prepared in
-  [CLOUDFLARE_CANARY.md](CLOUDFLARE_CANARY.md). It can test direct Cloudflare
-  scheduling with an empty database; it cannot stand in for proof from Sites or
-  approve public access.
+- Done: on 30 August 2026, the separate route-less Cloudflare timer test recorded
+  two full unattended runs. Both runs completed without an error, advanced the
+  empty test database heartbeat and left all private-input tables empty. Public
+  and preview Worker addresses were disabled, with no custom route or domain.
+  The checked evidence and limits are in
+  [CLOUDFLARE_CANARY.md](CLOUDFLARE_CANARY.md).
+- Not proved: the owner-only Site itself has not recorded an automatic hosted
+  deletion heartbeat. The direct Cloudflare pass proves the Worker scheduling
+  path, not that Sites installed the same timer. It cannot approve invitations,
+  public access or DNS.
 - Done: full test replies carry a non-extendable deletion deadline. Overdue
   replies fail closed, the next site request tries to erase them, and the owner
   can stop the reply job and erase every full reply early. The retained deletion

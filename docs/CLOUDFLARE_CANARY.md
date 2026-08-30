@@ -3,6 +3,24 @@
 **Plan only. This page does not give permission to deploy, publish, change DNS,
 open invitations or use real replies.**
 
+## Latest private result
+
+**Passed on 30 August 2026.** After the full setup delay, Cloudflare ran the
+route-less Worker at the 18:30 and 18:45 UTC slots without an error. The remote
+test database heartbeat advanced once at each slot, nothing was deleted and
+the reply, invitation, proposal, offer, appeal and retention-event counts all
+remained zero.
+
+The final live check found one 15-minute schedule, no custom routes or domains,
+and both the production `workers.dev` address and version preview addresses
+disabled. The account namespace exists only because Cloudflare requires it to
+attach a Cron Trigger.
+
+This result proves direct Cloudflare scheduling only. It does not prove the
+owner-only Site's timer, open invitations, make anything public or approve a
+DNS change. Detailed live IDs and timestamped checkpoints remain in the local,
+ignored evidence file.
+
 ## What is this?
 
 It is one small test. It asks: **will Cloudflare run our automatic deletion job
