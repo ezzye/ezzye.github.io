@@ -58,6 +58,8 @@ export type ActionCard = {
   locationMode: string;
   ownerName: string;
   reviewerName: string;
+  pilotTermsApprovedAt: string | null;
+  pilotApprovalSnapshot: string | null;
   capacity: number;
   status: ActionStatus;
   evidenceRequired: string;
@@ -156,6 +158,17 @@ export type AdminActionResponse = {
   confirmedAdult: boolean;
   status: 'new' | 'reviewed' | 'rejected';
   createdAt: string;
+};
+
+export type AdminActionInvite = {
+  id: string;
+  actionId: string;
+  actionTitle: string;
+  expiresAt: string;
+  usedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+  isExpired: boolean;
 };
 
 export type AppealInput = {

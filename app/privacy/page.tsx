@@ -1,21 +1,32 @@
 import type { Metadata } from 'next';
 
 import { SiteShell } from '@/components/site-shell';
+import {
+  getPilotPrivacyConfiguration,
+  getPublicContactEmail,
+  pilotPrivacyIsReady,
+} from '@/lib/public-intake';
 
 export const metadata: Metadata = {
   title: 'Privacy',
   description: 'What we keep, why we keep it and what stays off the site.',
 };
+export const dynamic = 'force-dynamic';
 
 export default function PrivacyPage() {
+  const contactEmail = getPublicContactEmail();
+  const pilotPrivacy = getPilotPrivacyConfiguration();
+  const pilotReady = pilotPrivacyIsReady();
   return (
     <SiteShell>
       <header className="page-hero compact-hero">
         <p className="eyebrow">Privacy</p>
         <h1>Private means private.</h1>
         <p>
-          A form you send us does not go online. This site has no public
-          accounts, comments, trackers or file uploads.
+          Your full form answer does not go online. The home-page test can add
+          to a nameless total or short summary only if you tick a separate,
+          optional box. This site has no public accounts, comments, trackers or
+          file uploads.
         </p>
       </header>
       <section className="page-section prose-page">
@@ -26,40 +37,132 @@ export default function PrivacyPage() {
           keep a small record to stop spam. Do not send passwords, case numbers,
           medical notes, witness statements or files.
         </p>
+        <p>
+          The first home-page test uses one-use links. We store a scrambled
+          version of each link in the site database, whether it was used, and
+          its closing time. The hosting service may also keep security and
+          operating logs. The test page does not send its address on to pages
+          you open from it.
+        </p>
         <h2>Why we keep it</h2>
         <p>
-          We use it to understand the problem, reply to you, plan a small job
-          and stop spam. A person checks anything before it goes online.
+          For the home-page test, we use answers to see whether the page is
+          clear, record your choices and stop one-use links being reused. The
+          test asks for no email, so we cannot reply unless you later email us
+          with your reference.
         </p>
-        <h2>Putting words online and using AI</h2>
         <p>
-          Nothing you send goes online by itself. If we make a public draft, we
-          take out private facts and show it to you first. AI is off by default.
-          We must name the AI tool, say what it will do and ask you before we
-          send it your words.
+          Future problem and review forms may use what you send to understand
+          the problem, reply and plan a small job. Those forms stay shut until
+          their own rules are checked. If publication is separately approved, a
+          person must check it first.
         </p>
+        {pilotPrivacy ? (
+          <p>
+            For the home-page test, the recorded legal reason (lawful basis) is:{' '}
+            <strong>{pilotPrivacy.lawfulBasis}</strong>
+          </p>
+        ) : (
+          <p>
+            The lawful basis for the home-page test has not been recorded, so no
+            real invitation can be used yet.
+          </p>
+        )}
+        <h2>What may go online</h2>
+        <p>
+          Nothing goes online by itself. A future problem form may make a draft
+          with names and private details removed only when the sender gives an
+          email and separately agrees to see that draft first.
+        </p>
+        <p>
+          The home-page test is different. It asks for no contact details, so we
+          cannot show a draft back to one person. Its optional tick box allows
+          only nameless totals or a short nameless summary. It never allows an
+          individual quote.
+        </p>
+        <h2>AI and who else may handle the data</h2>
+        <p>
+          AI is off for private answers. We must name the tool, say what it will
+          do and ask first before sending it anyone’s words.
+        </p>
+        {pilotPrivacy ? (
+          <p>{pilotPrivacy.recipients}</p>
+        ) : (
+          <p>
+            The people and services that may receive test data have not been
+            recorded, so the test stays shut.
+          </p>
+        )}
         <h2>Retention</h2>
+        {pilotPrivacy ? (
+          <p>
+            Full home-page test answers will be deleted by{' '}
+            <strong>{pilotPrivacy.responseDeleteDate}</strong>. A nameless
+            result may be kept only when the optional public-summary box was
+            ticked.
+          </p>
+        ) : (
+          <p>
+            An exact deletion date has not been set, so the home-page test stays
+            shut.
+          </p>
+        )}
         <p>
-          We aim to delete work we do not take on within 90 days of the last
-          check. We may keep work we do take on for up to 12 months after it
-          ends, then delete it or strip out who it came from. Public proof and
-          fixes may stay online while people still need them.
+          Future problem and review forms need their own checked deletion rules
+          before they open.
         </p>
         <h2>What you can ask us to do</h2>
         <p>
-          You can ask to see, fix, limit or delete what we hold. Use “Ask us to
-          fix a mistake”. Keep the reference from the home-page test: because we
-          ask for no name or email, that is how we find your reply. Sometimes
-          the law or safety rules mean we cannot delete it. If so, we should
-          tell you why.
+          You can ask to see, fix, limit or delete what we hold, and you can
+          withdraw consent. Keep the reference from the home-page test: because
+          we ask for no name or email, that is how we find your reply. Sometimes
+          the law means we cannot do exactly what you ask. If so, we should say
+          why.
         </p>
-        <h2>Before we invite anyone outside</h2>
         <p>
-          This first test is an owner-only preview. Before we invite people to
-          take part, we still need a named person in charge of the data, a
-          contact address and a full UK GDPR check. Until then, do not share the
-          test or send private case files.
+          You can also complain to the{' '}
+          <a href="https://ico.org.uk/make-a-complaint/data-protection-complaints/">
+            Information Commissioner’s Office
+          </a>
+          .
         </p>
+        <h2 id="contact">Who to contact</h2>
+        {pilotPrivacy ? (
+          <p>
+            <strong>{pilotPrivacy.dataOwner}</strong> is responsible for the
+            test data. Email{' '}
+            <a href={`mailto:${pilotPrivacy.contactEmail}`}>
+              {pilotPrivacy.contactEmail}
+            </a>{' '}
+            about privacy, access or deletion. The stated reply time is{' '}
+            {pilotPrivacy.replyTime}.
+          </p>
+        ) : contactEmail ? (
+          <p>
+            Email <a href={`mailto:${contactEmail}`}>{contactEmail}</a>. The
+            responsible name, reply time and other privacy details are still
+            missing, so the test stays shut.
+          </p>
+        ) : (
+          <p>
+            No public privacy email has been set. That means the test and the
+            other private forms must stay closed.
+          </p>
+        )}
+        <h2>{pilotReady ? 'The small test' : 'Before any real invitation'}</h2>
+        {pilotReady ? (
+          <p>
+            The privacy details for the invited home-page test are recorded.
+            This does not authorise invitations or make the site or the test
+            public.
+          </p>
+        ) : (
+          <p>
+            This is still a rehearsal. A named data owner, all details above and
+            a full privacy check must be recorded before a real link is made. Do
+            not share test links or send private case files.
+          </p>
+        )}
       </section>
     </SiteShell>
   );

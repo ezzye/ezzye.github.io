@@ -6,12 +6,22 @@ import { AdminDashboard } from '@/components/admin-dashboard';
 import { SiteShell } from '@/components/site-shell';
 import {
   getAdminAppeals,
+  getAdminActionInvites,
   getAdminActionResponses,
   getAdminProposals,
   getAdminStewardBriefs,
   getCurrentRepairBundle,
 } from '@/db/queries';
 import { adminIsConfigured, getAdminUser } from '@/lib/admin';
+import {
+  getPilotInviteAuthorization,
+  getPilotPrivacyConfiguration,
+  getPublicContactEmail,
+  pilotInvitesAreAuthorized,
+  pilotPrivacyIsReady,
+  pilotTermsAreApproved,
+  publicIntakeIsOpen,
+} from '@/lib/public-intake';
 
 export const metadata: Metadata = { title: 'Protected workshop' };
 export const dynamic = 'force-dynamic';
@@ -53,13 +63,17 @@ export default async function AdminPage() {
   }
 
   const bundle = await getCurrentRepairBundle();
-  const [proposals, appeals, stewardBriefs, actionResponses] =
+  const [proposals, appeals, stewardBriefs, actionResponses, actionInvites] =
     await Promise.all([
       getAdminProposals(),
       getAdminAppeals(),
       getAdminStewardBriefs(bundle.repair.id),
       getAdminActionResponses(bundle.repair.id),
+      getAdminActionInvites(bundle.repair.id),
     ]);
+  const pilotAction = bundle.actions.find(
+    (action) => action.participationMode === 'direct_response',
+  );
 
   return (
     <SiteShell>
@@ -77,9 +91,19 @@ export default async function AdminPage() {
           repair={bundle.repair}
           actions={bundle.actions}
           actionResponses={actionResponses}
+          actionInvites={actionInvites}
           proposals={proposals}
           appeals={appeals}
           stewardBriefs={stewardBriefs}
+          publicContactEmail={getPublicContactEmail()}
+          pilotPrivacy={getPilotPrivacyConfiguration()}
+          pilotPrivacyReady={pilotPrivacyIsReady(pilotAction?.reviewDate)}
+          pilotInviteAuthorization={getPilotInviteAuthorization()}
+          pilotInvitesAuthorized={pilotInvitesAreAuthorized()}
+          pilotTermsApproved={Boolean(
+            pilotAction && pilotTermsAreApproved(pilotAction),
+          )}
+          publicIntakeOpen={publicIntakeIsOpen()}
         />
       </section>
     </SiteShell>

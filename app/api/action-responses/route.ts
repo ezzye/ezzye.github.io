@@ -1,4 +1,13 @@
-import { createActionResponse, getDirectActionTask } from '@/db/queries';
+import {
+  createActionResponse,
+  getDirectActionTask,
+  getPilotActionSettings,
+} from '@/db/queries';
+import {
+  actionInviteTokenLooksValid,
+  hashActionInviteToken,
+} from '@/lib/action-invites';
+import { pilotRuntimeIsReady } from '@/lib/public-intake';
 import { allowRequest } from '@/lib/rate-limit';
 import {
   booleanField,
@@ -27,8 +36,26 @@ export async function POST(request: Request) {
     const actionId = stringField(body.actionId, 'actionId', {
       maximum: 100,
     })!;
-    const task = await getDirectActionTask(actionId);
-    if (!task || task.questions.length === 0) {
+    const inviteToken = stringField(body.inviteToken, 'inviteToken', {
+      maximum: 80,
+    })!;
+    if (!actionInviteTokenLooksValid(inviteToken)) {
+      throw new RequestValidationError(
+        'This private invitation is not valid. Ask for a fresh link.',
+        {},
+        409,
+      );
+    }
+    const [task, settings] = await Promise.all([
+      getDirectActionTask(actionId),
+      getPilotActionSettings(actionId),
+    ]);
+    if (
+      !task ||
+      !settings ||
+      task.questions.length === 0 ||
+      !pilotRuntimeIsReady(settings)
+    ) {
       throw new RequestValidationError(
         'This job is not taking replies now.',
         {},
@@ -65,6 +92,7 @@ export async function POST(request: Request) {
 
     const reference = await createActionResponse({
       actionId,
+      inviteTokenHash: await hashActionInviteToken(inviteToken),
       answers,
       consentPrivateUse: true,
       consentAnonymousSummary: booleanField(body.consentAnonymousSummary),

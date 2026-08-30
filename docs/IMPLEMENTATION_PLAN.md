@@ -1,5 +1,23 @@
 # Coding for Justice phase-one implementation plan
 
+## Where we are now
+
+- Done: the dynamic Site, managed database, protected workshop, warm home page,
+  first page-test rehearsal and owner-only deployment.
+- Done: replies are off by default; capacity, closing date, consent and permanent
+  reply deletion are enforced by the server.
+- Done: outside proposal, offer and review forms now stay shut unless a public
+  contact and an explicit intake setting are present.
+- Done: the first test uses action-bound, expiring, one-use links. Only scrambled
+  link values are stored.
+- Next: the owner must complete and approve the choices in
+  [LAUNCH_DECISIONS.md](LAUNCH_DECISIONS.md). Until then the real test stays
+  locked.
+- Later: public access and the domain change require a separate approval and the
+  checks in [PUBLIC_CUTOVER.md](PUBLIC_CUTOVER.md).
+
+The day-to-day pilot steps are in [PILOT_RUNBOOK.md](PILOT_RUNBOOK.md).
+
 ## Outcome
 
 Phase one turns Coding for Justice from a static statement into a small fairness repair workshop. It must prove one complete loop:
@@ -25,7 +43,8 @@ The site succeeds when one partner-backed repair is adopted, deliberately change
 - Action cards with time, output, owner, reviewer and completion evidence.
 - Outcome ledger distinguishing activity, observed effect and independent verification.
 - Covenant, moderation, correction, privacy and appeal routes.
-- Private forms for proposing a repair, offering help and requesting a review.
+- Closed-by-default private forms for proposing a repair, offering help and
+  requesting a review.
 - A clearly labelled fictional demonstration until the first partner repair passes the launch gate.
 
 ### Protected
@@ -96,10 +115,10 @@ The intake does not request addresses, credentials, identity numbers, case numbe
 - Put the new application on a separate review branch before any Pages change.
 - Deploy to managed hosting and verify its generated URL before touching DNS.
 - Preserve every old URL or redirect it to a labelled archive.
-- At cutover, change only the apex GitHub Pages A records and the `www` CNAME.
-- Do not alter Hover nameservers, MX, `mail`, the OpenAI verification TXT or `share.codingforjustice.org.uk`.
-- Verify apex HTTPS, `www`, legacy paths, email DNS and the Vibe share route before calling the migration complete.
-- Roll back by restoring the four GitHub Pages A records and `www` CNAME if the new apex fails.
+- Treat [PUBLIC_CUTOVER.md](PUBLIC_CUTOVER.md) as the one authoritative DNS
+  record, cutover and rollback plan. It requires an exact before/after diff from
+  Sites before approval and preserves every mail, nameserver and unrelated TXT
+  record.
 
 ## Launch gate
 

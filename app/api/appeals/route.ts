@@ -1,5 +1,6 @@
 import { createAppeal } from '@/db/queries';
 import { allowRequest } from '@/lib/rate-limit';
+import { publicIntakeIsOpen } from '@/lib/public-intake';
 import {
   emailField,
   errorResponse,
@@ -19,6 +20,13 @@ const REQUEST_TYPES = new Set([
 
 export async function POST(request: Request) {
   try {
+    if (!publicIntakeIsOpen()) {
+      throw new RequestValidationError(
+        'This private form is not open yet. Nothing was saved.',
+        {},
+        409,
+      );
+    }
     const body = await readJsonObject(request, 16_000);
     if (
       stringField(body.companyWebsite, 'companyWebsite', { optional: true })

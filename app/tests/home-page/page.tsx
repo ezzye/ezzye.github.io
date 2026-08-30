@@ -3,16 +3,26 @@ import { notFound } from 'next/navigation';
 
 import { ActionResponseForm } from '@/components/action-response-form';
 import { SiteShell } from '@/components/site-shell';
-import { getPublicRepairBundle } from '@/db/queries';
+import { getActionInviteState, getPublicRepairBundle } from '@/db/queries';
+import {
+  actionInviteTokenLooksValid,
+  hashActionInviteToken,
+} from '@/lib/action-invites';
+import { pilotRuntimeIsReady } from '@/lib/public-intake';
 
 export const metadata: Metadata = {
   title: 'Does the home page make sense?',
   description: 'A private preview of the first ten-minute site test.',
   robots: { index: false, follow: false },
+  referrer: 'no-referrer',
 };
 export const dynamic = 'force-dynamic';
 
-export default async function HomePageTest() {
+export default async function HomePageTest({
+  searchParams,
+}: {
+  searchParams: Promise<{ invite?: string | string[] }>;
+}) {
   const bundle = await getPublicRepairBundle('read-the-home-page');
   const action = bundle?.actions.find(
     (item) =>
@@ -21,20 +31,52 @@ export default async function HomePageTest() {
   );
   if (!action) notFound();
 
-  const isOpen =
+  const params = await searchParams;
+  const inviteToken =
+    typeof params.invite === 'string' ? params.invite.trim() : '';
+  const runtimeReady = pilotRuntimeIsReady(action);
+  const inviteState =
+    runtimeReady &&
     !action.isPreview &&
-    (action.status === 'ready' || action.status === 'offered');
-  const disabledReason = action.isPreview
-    ? 'Owner-only preview. Answers are off. Do not invite testers yet.'
-    : isOpen
-      ? undefined
-      : 'This test is closed. Answers are not being accepted.';
+    actionInviteTokenLooksValid(inviteToken)
+      ? await getActionInviteState(
+          action.id,
+          await hashActionInviteToken(inviteToken),
+        )
+      : 'invalid';
+
+  const isOpen =
+    runtimeReady &&
+    !action.isPreview &&
+    (action.status === 'ready' || action.status === 'offered') &&
+    inviteState === 'valid';
+  const disabledReason = !runtimeReady
+    ? 'This test is still being checked. Answers are off.'
+    : action.isPreview
+      ? 'Owner-only preview. Answers are off. Do not invite testers yet.'
+      : action.status !== 'ready' && action.status !== 'offered'
+        ? 'This test is closed. Answers are not being accepted.'
+        : !inviteToken
+          ? 'This test is invitation-only. Use the full private link you were sent.'
+          : inviteState === 'used'
+            ? 'That one-use link has already been used. Ask for a fresh link if you still need one.'
+            : inviteState === 'expired'
+              ? 'That link has expired. Ask for a fresh link.'
+              : inviteState === 'revoked'
+                ? 'That link has been stopped. Ask for a fresh link.'
+                : inviteState === 'valid'
+                  ? undefined
+                  : 'That invitation link is not valid. Ask for a fresh link.';
 
   return (
     <SiteShell>
       <header className="page-hero compact-hero">
         <p className="eyebrow">
-          {action.isPreview ? 'Owner-only preview' : '10-minute test'}
+          {action.isPreview
+            ? 'Owner-only preview'
+            : isOpen
+              ? 'Private 10-minute test'
+              : 'Invitation needed'}
         </p>
         <h1>Does the home page make sense?</h1>
         <p>
@@ -61,6 +103,7 @@ export default async function HomePageTest() {
         </aside>
         <ActionResponseForm
           actionId={action.id}
+          inviteToken={isOpen ? inviteToken : undefined}
           questions={action.responseQuestions}
           disabledReason={disabledReason}
         />

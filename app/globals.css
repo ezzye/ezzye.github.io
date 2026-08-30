@@ -1123,6 +1123,25 @@
   margin-top: 0.15rem;
 }
 
+.intake-closed {
+  max-width: 46rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--border);
+  border-left: 0.35rem solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.intake-closed h3 {
+  font-size: 1.4rem;
+}
+
+.intake-closed p {
+  margin-top: 0.55rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
 .form-submit-row {
   display: flex;
   align-items: center;
@@ -1382,6 +1401,88 @@
 .admin-dashboard {
   display: grid;
   gap: 5rem;
+}
+
+.pilot-control {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 2px solid var(--foreground);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.pilot-checklist {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.pilot-settings {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 0.8);
+}
+
+.pilot-settings > summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.pilot-settings > p,
+.pilot-settings > label,
+.pilot-settings > .form-two-column,
+.pilot-settings > button {
+  margin-top: 1rem;
+}
+
+.pilot-settings label {
+  display: grid;
+  gap: 0.45rem;
+  font-weight: 650;
+}
+
+.pilot-checklist li {
+  padding: 0.65rem 0.8rem;
+  border-radius: calc(var(--radius) * 0.7);
+  background: color-mix(in srgb, var(--destructive) 9%, var(--card));
+}
+
+.pilot-checklist li[data-ready='true'] {
+  background: color-mix(in srgb, var(--primary) 11%, var(--card));
+}
+
+.pilot-checklist li::before {
+  content: 'Not ready — ';
+  font-weight: 700;
+}
+
+.pilot-checklist li[data-ready='true']::before {
+  content: 'Ready — ';
+}
+
+.pilot-actions,
+.new-invite-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.new-invite-link label {
+  flex-basis: 100%;
+  font-weight: 700;
+}
+
+.new-invite-link input {
+  min-width: min(100%, 30rem);
+  flex: 1 1 30rem;
+}
+
+.invite-list {
+  margin-top: 1.5rem;
 }
 
 .admin-dashboard > section > h2 {

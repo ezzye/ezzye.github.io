@@ -5,12 +5,14 @@ import { ArrowRight, Check } from 'lucide-react';
 import { SiteShell } from '@/components/site-shell';
 import { buttonVariants } from '@/components/ui/button';
 import { getHomeRepairBundle } from '@/db/queries';
+import { pilotRuntimeIsReady, publicIntakeIsOpen } from '@/lib/public-intake';
 import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const bundle = await getHomeRepairBundle();
+  const publicIntakeOpen = publicIntakeIsOpen();
   const nextAction = bundle.actions.find(
     (action) =>
       (action.status === 'ready' || action.status === 'offered') &&
@@ -19,26 +21,40 @@ export default async function Home() {
         (action.responseQuestions.length > 0 && action.responsePath)),
   );
   const hasRealJob = !bundle.repair.isDemo && Boolean(nextAction);
+  const pilotIsOpen = Boolean(
+    hasRealJob &&
+    nextAction &&
+    !nextAction.isPreview &&
+    pilotRuntimeIsReady(nextAction),
+  );
   const jobLink =
     nextAction?.responsePath ?? `/repairs/${bundle.repair.slug}#open-jobs`;
   const choices = [
     {
       number: '1',
-      title: nextAction?.isPreview ? 'Preview the first job' : 'I want to help',
+      title: pilotIsOpen
+        ? 'I want to help'
+        : hasRealJob
+          ? 'Preview the first job'
+          : 'See a sample job',
       body: hasRealJob
-        ? nextAction?.isPreview
-          ? 'Answers are off. Check the wording and flow.'
-          : `A real job is open. ${nextAction?.timeSize}. ${nextAction?.compensation}`
+        ? pilotIsOpen
+          ? `A real job is open. ${nextAction?.timeSize}. ${nextAction?.compensation}`
+          : 'Answers are off. Check the wording and flow.'
         : 'See the kind of small job we will post. No real job is open yet.',
       link: hasRealJob ? jobLink : '/repairs/public-consultation#open-jobs',
       action: hasRealJob ? 'Check the first job' : 'See an example job',
     },
     {
       number: '2',
-      title: 'I need help',
-      body: 'Tell us about a bad rule, form or service. What you send stays private.',
+      title: publicIntakeOpen ? 'I need help' : 'How to ask for help',
+      body: publicIntakeOpen
+        ? 'Tell us about a bad rule, form or service. What you send stays private.'
+        : 'The private form is not open yet. See what it will ask.',
       link: '/start',
-      action: 'Tell us what is wrong',
+      action: publicIntakeOpen
+        ? 'Tell us what is wrong'
+        : 'See how it will work',
     },
     {
       number: '3',
@@ -118,7 +134,11 @@ export default async function Home() {
       <section className="one-job" aria-labelledby="one-job-title">
         <div>
           <p className="plain-kicker">
-            {hasRealJob ? 'First job — owner-only preview' : 'Made-up example'}
+            {hasRealJob
+              ? pilotIsOpen
+                ? 'First five-person test'
+                : 'Owner-only rehearsal'
+              : 'Made-up example'}
           </p>
           <h2 id="one-job-title">
             {hasRealJob ? nextAction?.title : 'Read one short guide'}
@@ -153,7 +173,9 @@ export default async function Home() {
           </Link>
           <p className="click-note">
             {hasRealJob
-              ? 'Owner-only preview. Do not invite people yet. The privacy checks must come first.'
+              ? pilotIsOpen
+                ? 'Invitation only. Each person gets a one-use private link.'
+                : 'Owner-only rehearsal. Answers are off.'
               : 'This is not a real job. You cannot sign up for it.'}
           </p>
         </div>

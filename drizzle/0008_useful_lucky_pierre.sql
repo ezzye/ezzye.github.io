@@ -1,0 +1,1 @@
+ALTER TABLE `action_cards` ADD `pilot_approval_snapshot` text;

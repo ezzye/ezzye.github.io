@@ -2,6 +2,20 @@ declare namespace Cloudflare {
   interface Env {
     DB: D1Database;
     ADMIN_EMAIL?: string;
+    PUBLIC_CONTACT_EMAIL?: string;
+    PUBLIC_DATA_OWNER?: string;
+    PUBLIC_PRIVACY_REPLY_TIME?: string;
+    PUBLIC_LAWFUL_BASIS?: string;
+    PUBLIC_DATA_RECIPIENTS?: string;
+    PUBLIC_INTAKE_ENABLED?: string;
+    PUBLIC_INTAKE_PRIVACY_READY?: string;
+    PUBLIC_INTAKE_STAFFED?: string;
+    PILOT_PRIVACY_READY?: string;
+    PILOT_RESPONSE_DELETE_DATE?: string;
+    PILOT_INVITES_AUTHORIZED?: string;
+    PILOT_INVITE_APPROVAL_REFERENCE?: string;
+    PILOT_RECRUITMENT_PLAN?: string;
+    PILOT_REPLY_READER?: string;
     DEEPSEEK_API_KEY?: string;
   }
 }

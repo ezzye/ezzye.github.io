@@ -4,24 +4,33 @@ import { AppealForm } from '@/components/appeal-form';
 import { formatDate } from '@/components/repair-card';
 import { SiteShell } from '@/components/site-shell';
 import { getPublishedCorrections } from '@/db/queries';
+import { publicIntakeIsOpen } from '@/lib/public-intake';
 
 export const metadata: Metadata = {
-  title: 'Ask us to fix a mistake',
+  title: 'How to ask us to fix a mistake',
   description:
-    'Ask for a factual correction, privacy removal, accessibility fix or moderation review.',
+    'See how the planned review form and correction process will work.',
 };
 export const dynamic = 'force-dynamic';
 
 export default async function AppealPage() {
   const corrections = await getPublishedCorrections();
+  const isOpen = publicIntakeIsOpen();
   return (
     <SiteShell>
       <header className="page-hero compact-hero">
-        <p className="eyebrow">We can get things wrong</p>
-        <h1>Ask us to fix a mistake.</h1>
+        <p className="eyebrow">
+          {isOpen ? 'We can get things wrong' : 'How review will work'}
+        </p>
+        <h1>
+          {isOpen
+            ? 'Ask us to fix a mistake.'
+            : 'This review form is not open yet.'}
+        </h1>
         <p>
-          Tell us which page or choice is wrong. Someone who did not make the
-          first choice should look at it.
+          {isOpen
+            ? 'Tell us which page or choice is wrong. We will record who checks it and whether they were involved the first time.'
+            : 'When it is staffed, you will be able to ask for a fact fix, privacy removal, accessibility fix or a check of a decision to remove or limit something.'}
         </p>
       </header>
 
@@ -30,14 +39,32 @@ export default async function AppealPage() {
         aria-labelledby="standard-title"
       >
         <div className="section-heading">
-          <p className="eyebrow">What happens next</p>
-          <h2 id="standard-title">A second person checks it.</h2>
+          <p className="eyebrow">The standard</p>
+          <h2 id="standard-title">
+            {isOpen ? 'How we check it.' : 'How an open review must work.'}
+          </h2>
         </div>
         <ol>
-          <li>We look at urgent safety or privacy risks first.</li>
-          <li>We write down why we made the first choice.</li>
-          <li>A different person checks your request and the proof.</li>
-          <li>We tell you what we chose and why. Public mistakes go below.</li>
+          <li>
+            {isOpen
+              ? 'We remove exposed private information first when we can.'
+              : 'A staffed review must remove exposed private information first when it can.'}
+          </li>
+          <li>
+            {isOpen
+              ? 'We write down why we made the first choice.'
+              : 'The reviewer must write down why the first choice was made.'}
+          </li>
+          <li>
+            {isOpen
+              ? 'We record whether a different person checked it. If nobody else is available, we say that plainly.'
+              : 'The record must say whether a different person checked it. If nobody else is available, it must say so.'}
+          </li>
+          <li>
+            {isOpen
+              ? 'We say what was chosen and why.'
+              : 'When the route opens, the result must say what was chosen and why.'}
+          </li>
         </ol>
       </section>
 
@@ -46,10 +73,22 @@ export default async function AppealPage() {
         aria-labelledby="appeal-form-title"
       >
         <div className="section-heading">
-          <p className="eyebrow">Private form</p>
-          <h2 id="appeal-form-title">What do we need to look at?</h2>
+          <p className="eyebrow">{isOpen ? 'Private form' : 'Future form'}</p>
+          <h2 id="appeal-form-title">
+            {isOpen ? 'What do we need to look at?' : 'What it will ask.'}
+          </h2>
         </div>
-        <AppealForm />
+        {isOpen ? (
+          <AppealForm />
+        ) : (
+          <output className="intake-closed">
+            <h3>This form is not open yet.</h3>
+            <p>
+              We are checking the privacy and review process first. No request
+              can be sent from this page yet.
+            </p>
+          </output>
+        )}
       </section>
 
       <section

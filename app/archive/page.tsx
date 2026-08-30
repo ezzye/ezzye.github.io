@@ -13,17 +13,17 @@ const legacyItems = [
     title: 'Coding for Equal Justice',
     description:
       'The founding 2021 statement about technology, inequality and access to justice.',
-    path: 'docs/home/discrimination/2021/04/24/coding-for-equal-justice.html',
+    path: 'docs/_posts/2021-04-24-coding-for-equal-justice.md',
   },
   {
     title: 'Idea for the Police App',
     description: 'A historical product concept concerning stop and search.',
-    path: 'docs/stop/and/search/app/2021/04/19/Idea-for-the-police-app.html',
+    path: 'docs/_posts/2021-04-19-Idea-for-the-police-app.markdown',
   },
   {
     title: 'Stop and Search Video',
     description: 'A historical media page from the original site.',
-    path: 'docs/youtube/stop/and/search/video/2021/04/19/youtube-stop-and-search-video.html',
+    path: 'docs/_posts/2021-04-18-youtube-stop-and-search-video.markdown',
   },
 ];
 

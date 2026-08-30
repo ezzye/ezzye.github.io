@@ -99,8 +99,8 @@ export function AppealForm() {
             rows={7}
           />
           <FieldDescription>
-            Be as clear as you can. We look at urgent safety and privacy risks
-            first.
+            Be as clear as you can. This is not an emergency or safety service.
+            We remove exposed private information first when we can.
           </FieldDescription>
         </Field>
         <Field>

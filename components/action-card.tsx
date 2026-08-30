@@ -15,19 +15,25 @@ import { ActionStatusBadge } from '@/components/workshop-status';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ActionCard as ActionCardType } from '@/lib/types';
+import { publicIntakeIsOpen } from '@/lib/public-intake';
 import { cn } from '@/lib/utils';
 
 export function ActionCard({
   action,
   isDemo = false,
+  pilotRuntimeReady = false,
 }: {
   action: ActionCardType;
   isDemo?: boolean;
+  pilotRuntimeReady?: boolean;
 }) {
+  const intakeOpen = publicIntakeIsOpen();
   const acceptingOffers =
     (action.status === 'ready' || action.status === 'offered') &&
     action.compensation !== 'Pay not set — job cannot open' &&
-    !action.isPreview;
+    !action.isPreview &&
+    (action.participationMode !== 'direct_response' || pilotRuntimeReady) &&
+    (action.participationMode !== 'offer' || intakeOpen);
   const hasDirectResponsePage =
     action.participationMode === 'direct_response' &&
     action.responseQuestions.length > 0 &&
@@ -40,6 +46,9 @@ export function ActionCard({
             <span className="demo-label">Made-up job — not open</span>
           ) : action.isPreview ? (
             <span className="demo-label">Owner-only preview — not open</span>
+          ) : action.participationMode === 'direct_response' &&
+            !pilotRuntimeReady ? (
+            <span className="demo-label">Replies are off</span>
           ) : (
             <ActionStatusBadge status={action.status} />
           )}
@@ -109,7 +118,9 @@ export function ActionCard({
           hasDirectResponsePage &&
           !acceptingOffers && (
             <p className="demo-job-stop">
-              This job is closed. We are checking the replies now.
+              {pilotRuntimeReady
+                ? 'This job is closed. We are checking the replies now.'
+                : 'Replies are off while the privacy, permission and exact wording checks are finished.'}
             </p>
           )}
         <details className="job-more">
@@ -141,17 +152,23 @@ export function ActionCard({
         </details>
         {!isDemo && hasDirectResponsePage && (
           <div className="offer-disclosure direct-response-link">
-            {action.isPreview && (
+            {!acceptingOffers && (
               <p>
                 Answers are off. You can check the form, but nothing can be
                 sent.
+              </p>
+            )}
+            {acceptingOffers && (
+              <p>
+                This test uses one-use links. Only the full link sent to a
+                tester can take a reply.
               </p>
             )}
             <Link
               className={cn(buttonVariants({ size: 'lg' }), 'plain-button')}
               href={action.responsePath!}
             >
-              {action.isPreview ? 'Preview the form' : 'Do this job now'}
+              {action.isPreview ? 'Preview the form' : 'See how the test works'}
               <ArrowRight aria-hidden="true" />
             </Link>
           </div>
@@ -162,6 +179,15 @@ export function ActionCard({
             <OfferHelpForm actionId={action.id} actionTitle={action.title} />
           </details>
         )}
+        {!isDemo &&
+          action.participationMode === 'offer' &&
+          !action.isPreview &&
+          !intakeOpen && (
+            <p className="demo-job-stop">
+              Offers are not open yet. We are checking the privacy and reply
+              process first.
+            </p>
+          )}
       </CardContent>
     </Card>
   );

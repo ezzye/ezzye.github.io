@@ -12,12 +12,17 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type {
   ActionCard,
+  AdminActionInvite,
   AdminActionResponse,
   AdminAppeal,
   AdminProposal,
   Repair,
   StewardBrief,
 } from '@/lib/types';
+import type {
+  PilotInviteAuthorization,
+  PilotPrivacyConfiguration,
+} from '@/lib/public-intake';
 
 type MutationState = {
   kind: 'idle' | 'sending' | 'success' | 'error';
@@ -156,6 +161,446 @@ function DeleteResponseButton({ responseId }: { responseId: string }) {
         {state.message}
       </span>
     </div>
+  );
+}
+
+function PilotControls({
+  actions,
+  invites,
+  publicContactEmail,
+  pilotPrivacy,
+  pilotPrivacyReady,
+  pilotInviteAuthorization,
+  pilotInvitesAuthorized,
+  pilotTermsApproved,
+  publicIntakeOpen,
+}: {
+  actions: ActionCard[];
+  invites: AdminActionInvite[];
+  publicContactEmail: string | null;
+  pilotPrivacy: PilotPrivacyConfiguration | null;
+  pilotPrivacyReady: boolean;
+  pilotInviteAuthorization: PilotInviteAuthorization | null;
+  pilotInvitesAuthorized: boolean;
+  pilotTermsApproved: boolean;
+  publicIntakeOpen: boolean;
+}) {
+  const router = useRouter();
+  const action = actions.find(
+    (item) => item.participationMode === 'direct_response',
+  );
+  const [state, setState] = useState<MutationState>(idleState);
+  const [newLink, setNewLink] = useState('');
+  const [workingInviteId, setWorkingInviteId] = useState<string | null>(null);
+  const [compensation, setCompensation] = useState(action?.compensation ?? '');
+  const [reviewerName, setReviewerName] = useState(action?.reviewerName ?? '');
+  const [reviewDate, setReviewDate] = useState(action?.reviewDate ?? '');
+  const activeInviteCount = invites.filter(
+    (invite) => !invite.usedAt && !invite.revokedAt && !invite.isExpired,
+  ).length;
+  const settingsMatchAction = Boolean(
+    action &&
+    compensation === action.compensation &&
+    reviewerName === action.reviewerName &&
+    reviewDate === action.reviewDate,
+  );
+  const canMakeLink = Boolean(
+    action &&
+    publicContactEmail &&
+    pilotPrivacyReady &&
+    pilotInvitesAuthorized &&
+    pilotTermsApproved &&
+    settingsMatchAction &&
+    !publicIntakeOpen,
+  );
+  const pilotRuntimeReady = canMakeLink;
+  const canOpen = Boolean(canMakeLink && activeInviteCount > 0);
+
+  async function createLink() {
+    if (!action) return;
+    setState({ kind: 'sending', message: 'Making one link…' });
+    setNewLink('');
+    try {
+      const response = await fetch('/api/admin/action-invites', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ actionId: action.id }),
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        message?: string;
+        invite?: { url: string };
+      };
+      if (!response.ok || !payload.ok || !payload.invite?.url) {
+        throw new Error(payload.message ?? 'The link could not be made.');
+      }
+      setNewLink(payload.invite.url);
+      setState({
+        kind: 'success',
+        message:
+          'One link made. The readable link is shown only in this response.',
+      });
+      router.refresh();
+    } catch (error) {
+      setState({
+        kind: 'error',
+        message: error instanceof Error ? error.message : 'Failed.',
+      });
+    }
+  }
+
+  async function savePilotSettings() {
+    if (!action) return;
+    setState({ kind: 'sending', message: 'Saving the test details…' });
+    try {
+      await sendMutation(`/api/admin/actions/${action.id}`, 'PATCH', {
+        operation: 'pilot-settings',
+        compensation,
+        reviewerName,
+        reviewDate,
+      });
+      setState({
+        kind: 'success',
+        message: 'Test details saved. Check the terms again before opening.',
+      });
+      router.refresh();
+    } catch (error) {
+      setState({
+        kind: 'error',
+        message: error instanceof Error ? error.message : 'Failed.',
+      });
+    }
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(newLink);
+      setState({ kind: 'success', message: 'Link copied.' });
+    } catch {
+      setState({
+        kind: 'error',
+        message: 'Copy did not work. Select the link in the box instead.',
+      });
+    }
+  }
+
+  async function approvePilotTerms() {
+    if (!action) return;
+    setState({ kind: 'sending', message: 'Approving these exact details…' });
+    try {
+      await sendMutation(`/api/admin/actions/${action.id}`, 'PATCH', {
+        operation: 'approve-pilot-terms',
+      });
+      setState({
+        kind: 'success',
+        message:
+          'These exact test details are approved. Changing them removes approval.',
+      });
+      router.refresh();
+    } catch (error) {
+      setState({
+        kind: 'error',
+        message: error instanceof Error ? error.message : 'Failed.',
+      });
+    }
+  }
+
+  async function togglePreview() {
+    if (!action) return;
+    if (
+      action.isPreview &&
+      !window.confirm(
+        'Open this test to valid one-use links? Site sharing is a separate step.',
+      )
+    ) {
+      return;
+    }
+    setState({
+      kind: 'sending',
+      message: action.isPreview ? 'Opening the test…' : 'Stopping replies…',
+    });
+    try {
+      await sendMutation(`/api/admin/actions/${action.id}`, 'PATCH', {
+        isPreview: !action.isPreview,
+      });
+      setState({
+        kind: 'success',
+        message: action.isPreview
+          ? 'Valid one-use links can now reply.'
+          : 'Replies are stopped. Unused links are stopped too. Fresh approval and links are needed to restart.',
+      });
+      router.refresh();
+    } catch (error) {
+      setState({
+        kind: 'error',
+        message: error instanceof Error ? error.message : 'Failed.',
+      });
+    }
+  }
+
+  async function revoke(inviteId: string) {
+    setWorkingInviteId(inviteId);
+    setState({ kind: 'sending', message: 'Stopping that link…' });
+    try {
+      const response = await fetch(`/api/admin/action-invites/${inviteId}`, {
+        method: 'DELETE',
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        message?: string;
+      };
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.message ?? 'The link could not be stopped.');
+      }
+      setState({ kind: 'success', message: 'Link stopped.' });
+      router.refresh();
+    } catch (error) {
+      setState({
+        kind: 'error',
+        message: error instanceof Error ? error.message : 'Failed.',
+      });
+    } finally {
+      setWorkingInviteId(null);
+    }
+  }
+
+  if (!action) return null;
+
+  return (
+    <section className="pilot-control">
+      <h2>First five people</h2>
+      <p className="admin-warning">
+        The test stays closed until every required line below is ready. Public
+        site access and the domain are separate and are not changed here.
+      </p>
+      <details className="pilot-settings">
+        <summary>Set pay, closing date and reviewer</summary>
+        <p>
+          Set these before making links. After any change, check that the invite
+          words and approved terms still match.
+        </p>
+        <label htmlFor="pilot-compensation">
+          Pay or unpaid terms
+          <Textarea
+            id="pilot-compensation"
+            value={compensation}
+            onChange={(event) => setCompensation(event.target.value)}
+            minLength={10}
+            maxLength={240}
+            rows={2}
+          />
+        </label>
+        <div className="form-two-column">
+          <label htmlFor="pilot-reviewer">
+            Person who checks the result
+            <Input
+              id="pilot-reviewer"
+              value={reviewerName}
+              onChange={(event) => setReviewerName(event.target.value)}
+              minLength={2}
+              maxLength={120}
+            />
+          </label>
+          <label htmlFor="pilot-closing-date">
+            Closing date
+            <Input
+              id="pilot-closing-date"
+              type="date"
+              value={reviewDate}
+              onChange={(event) => setReviewDate(event.target.value)}
+            />
+          </label>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={savePilotSettings}
+          disabled={
+            state.kind === 'sending' ||
+            !action.isPreview ||
+            activeInviteCount > 0
+          }
+        >
+          Save test details
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={approvePilotTerms}
+          disabled={
+            state.kind === 'sending' ||
+            !action.isPreview ||
+            activeInviteCount > 0 ||
+            !pilotPrivacyReady ||
+            !pilotInvitesAuthorized ||
+            publicIntakeOpen ||
+            !settingsMatchAction
+          }
+        >
+          Approve these exact details
+        </Button>
+        {!settingsMatchAction && (
+          <p className="admin-warning">Save these changes before approval.</p>
+        )}
+      </details>
+      <details className="pilot-settings">
+        <summary>Read the exact deal before approval</summary>
+        <p>
+          <strong>Job:</strong> {action.title}. {action.intendedOutput}
+        </p>
+        <p>
+          <strong>Why:</strong> {action.whyItMatters}
+        </p>
+        <p>
+          <strong>Time and place:</strong> {action.timeSize};{' '}
+          {action.locationMode}.
+        </p>
+        <p>
+          <strong>Pay:</strong> {action.compensation}
+        </p>
+        <p>
+          <strong>People:</strong> owner {action.ownerName}; checker{' '}
+          {action.reviewerName}; reply reader{' '}
+          {pilotInviteAuthorization?.replyReader ?? 'not set'}.
+        </p>
+        <p>
+          <strong>Places and closing date:</strong> {action.capacity} places;
+          closes {action.reviewDate}.
+        </p>
+        <p>
+          <strong>Questions:</strong>{' '}
+          {action.responseQuestions.length > 0
+            ? action.responseQuestions.join(' / ')
+            : 'none set'}
+        </p>
+        <p>
+          <strong>What counts:</strong> {action.evidenceRequired}
+        </p>
+        <p>
+          <strong>When to stop:</strong> {action.stopCondition}
+        </p>
+        <p>
+          <strong>Privacy:</strong>{' '}
+          {pilotPrivacy
+            ? `${pilotPrivacy.dataOwner}; ${pilotPrivacy.lawfulBasis}; ${pilotPrivacy.recipients}; reply within ${pilotPrivacy.replyTime}; delete full replies by ${pilotPrivacy.responseDeleteDate}.`
+            : 'not fully set.'}
+        </p>
+        <p>
+          <strong>Invitation decision:</strong>{' '}
+          {pilotInviteAuthorization
+            ? `${pilotInviteAuthorization.approvalReference}. ${pilotInviteAuthorization.recruitmentPlan}`
+            : 'not authorised.'}
+        </p>
+      </details>
+      <ul className="pilot-checklist">
+        <li data-ready={Boolean(publicContactEmail)}>
+          Public privacy contact: {publicContactEmail ?? 'missing'}
+        </li>
+        <li data-ready={pilotPrivacyReady}>
+          Pilot privacy check: {pilotPrivacyReady ? 'recorded' : 'not recorded'}
+        </li>
+        <li data-ready={pilotInvitesAuthorized}>
+          Real invitation permission:{' '}
+          {pilotInvitesAuthorized ? 'authorised' : 'not authorised'}
+        </li>
+        <li data-ready={pilotTermsApproved}>
+          Exact questions, pay, people, privacy and dates:{' '}
+          {pilotTermsApproved ? 'approved' : 'not approved'}
+        </li>
+        <li data-ready={activeInviteCount > 0}>
+          Unused one-use links: {activeInviteCount}
+        </li>
+        <li data-ready={action.isPreview || pilotRuntimeReady}>
+          Replies:{' '}
+          {action.isPreview
+            ? 'locked'
+            : pilotRuntimeReady
+              ? 'open to valid links'
+              : 'off — a safety check failed'}
+        </li>
+        <li data-ready={!publicIntakeOpen}>
+          Other private forms: {publicIntakeOpen ? 'open' : 'closed'}
+        </li>
+      </ul>
+
+      <div className="pilot-actions">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={createLink}
+          disabled={state.kind === 'sending' || !canMakeLink}
+        >
+          Make one one-use link
+        </Button>
+        <Button
+          type="button"
+          variant={action.isPreview ? 'default' : 'destructive'}
+          onClick={togglePreview}
+          disabled={state.kind === 'sending' || (action.isPreview && !canOpen)}
+        >
+          {action.isPreview ? 'Open test to valid links' : 'Stop replies now'}
+        </Button>
+        <span
+          className={state.kind === 'error' ? 'admin-error' : ''}
+          aria-live="polite"
+        >
+          {state.message}
+        </span>
+      </div>
+
+      {newLink && (
+        <div className="new-invite-link">
+          <label htmlFor="new-pilot-link">
+            Copy this now. The site database keeps only a scrambled copy.
+          </label>
+          <Input id="new-pilot-link" value={newLink} readOnly />
+          <Button type="button" variant="outline" onClick={copyLink}>
+            Copy link
+          </Button>
+        </div>
+      )}
+
+      <div className="admin-list invite-list">
+        {invites.length === 0 ? (
+          <p className="empty-ledger">No one-use links have been made.</p>
+        ) : (
+          invites.map((invite) => {
+            const stateLabel = invite.usedAt
+              ? 'used'
+              : invite.revokedAt
+                ? 'stopped'
+                : invite.isExpired
+                  ? 'expired'
+                  : 'unused';
+            return (
+              <article className="admin-item" key={invite.id}>
+                <p className="mini-label">{invite.id}</p>
+                <h3>{stateLabel}</h3>
+                <p>
+                  Closes after{' '}
+                  {new Date(
+                    new Date(invite.expiresAt).getTime() - 1,
+                  ).toLocaleDateString('en-GB', {
+                    timeZone: 'Europe/London',
+                    dateStyle: 'long',
+                  })}
+                </p>
+                {stateLabel === 'unused' && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => revoke(invite.id)}
+                    disabled={workingInviteId === invite.id}
+                  >
+                    Stop this link
+                  </Button>
+                )}
+              </article>
+            );
+          })
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -511,20 +956,47 @@ function StewardPanel({
 export function AdminDashboard({
   repair,
   actions,
+  actionInvites,
   actionResponses,
   proposals,
   appeals,
   stewardBriefs,
+  publicContactEmail,
+  pilotPrivacy,
+  pilotPrivacyReady,
+  pilotInviteAuthorization,
+  pilotInvitesAuthorized,
+  pilotTermsApproved,
+  publicIntakeOpen,
 }: {
   repair: Repair;
   actions: ActionCard[];
+  actionInvites: AdminActionInvite[];
   actionResponses: AdminActionResponse[];
   proposals: AdminProposal[];
   appeals: AdminAppeal[];
   stewardBriefs: StewardBrief[];
+  publicContactEmail: string | null;
+  pilotPrivacy: PilotPrivacyConfiguration | null;
+  pilotPrivacyReady: boolean;
+  pilotInviteAuthorization: PilotInviteAuthorization | null;
+  pilotInvitesAuthorized: boolean;
+  pilotTermsApproved: boolean;
+  publicIntakeOpen: boolean;
 }) {
   return (
     <div className="admin-dashboard">
+      <PilotControls
+        actions={actions}
+        invites={actionInvites}
+        publicContactEmail={publicContactEmail}
+        pilotPrivacy={pilotPrivacy}
+        pilotPrivacyReady={pilotPrivacyReady}
+        pilotInviteAuthorization={pilotInviteAuthorization}
+        pilotInvitesAuthorized={pilotInvitesAuthorized}
+        pilotTermsApproved={pilotTermsApproved}
+        publicIntakeOpen={publicIntakeOpen}
+      />
       <StewardPanel repair={repair} actions={actions} briefs={stewardBriefs} />
       <section>
         <h2>Current repair</h2>

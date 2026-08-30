@@ -8,6 +8,7 @@ import { formatDate } from '@/components/repair-card';
 import { SiteShell } from '@/components/site-shell';
 import { RepairStageBadge } from '@/components/workshop-status';
 import { getPublicRepairBundle } from '@/db/queries';
+import { pilotRuntimeIsReady } from '@/lib/public-intake';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,12 +29,24 @@ export default async function RepairPage({ params }: PageProps) {
   const bundle = await getPublicRepairBundle(slug);
   if (!bundle) notFound();
   const { repair, actions, outcomes, updates } = bundle;
-  const hasDirectResponse = actions.some(
+  const directResponseActions = actions.filter(
     (action) => action.participationMode === 'direct_response',
   );
-  const hasPreviewResponse = actions.some(
+  const directResponseReadiness = new Map(
+    directResponseActions.map((action) => [
+      action.id,
+      pilotRuntimeIsReady(action),
+    ]),
+  );
+  const hasDirectResponse = directResponseActions.length > 0;
+  const hasPreviewResponse = directResponseActions.some(
+    (action) => action.isPreview,
+  );
+  const hasOpenDirectResponse = directResponseActions.some(
     (action) =>
-      action.participationMode === 'direct_response' && action.isPreview,
+      !action.isPreview &&
+      directResponseReadiness.get(action.id) &&
+      (action.status === 'ready' || action.status === 'offered'),
   );
 
   return (
@@ -54,9 +67,11 @@ export default async function RepairPage({ params }: PageProps) {
         <p className="page-help">
           {hasPreviewResponse
             ? 'This is an owner-only preview. The form is below, but answers are off.'
-            : hasDirectResponse
+            : hasOpenDirectResponse
               ? 'The job is below. Answer five short questions. No name or email.'
-              : 'Read this page to see what is wrong. Jump to the small jobs to see how helping would work.'}
+              : hasDirectResponse
+                ? 'The test is below, but replies are off while its safety checks are finished.'
+                : 'Read this page to see what is wrong. Jump to the small jobs to see how helping would work.'}
         </p>
         <dl className="hero-ledger">
           <div>
@@ -144,9 +159,11 @@ export default async function RepairPage({ params }: PageProps) {
                 ? 'See how helping would work'
                 : hasPreviewResponse
                   ? 'Preview the 10-minute form'
-                  : hasDirectResponse
+                  : hasOpenDirectResponse
                     ? 'Do this 10-minute job'
-                    : 'Pick one small job'}
+                    : hasDirectResponse
+                      ? 'Read the 10-minute test'
+                      : 'Pick one small job'}
             </h2>
           </div>
           <p>
@@ -154,9 +171,11 @@ export default async function RepairPage({ params }: PageProps) {
               ? 'These jobs are made up. You cannot sign up. A real job will say if it is paid or unpaid.'
               : hasPreviewResponse
                 ? 'Answers are not being accepted. Check the wording and safeguards. Do not invite testers yet.'
-                : hasDirectResponse
+                : hasOpenDirectResponse
                   ? 'Do this job on this page. We ask for no name or email. Full answers stay private. We only publish nameless totals or a short summary if you say yes.'
-                  : 'Saying “I can help” does not give you the job. We first check it is safe, clear and a good fit.'}
+                  : hasDirectResponse
+                    ? 'Replies are off while the privacy, permission and exact wording checks are finished.'
+                    : 'Saying “I can help” does not give you the job. We first check it is safe, clear and a good fit.'}
           </p>
         </div>
         <div className="card-grid action-grid">
@@ -165,6 +184,11 @@ export default async function RepairPage({ params }: PageProps) {
               key={action.id}
               action={action}
               isDemo={repair.isDemo}
+              pilotRuntimeReady={
+                action.participationMode === 'direct_response'
+                  ? directResponseReadiness.get(action.id)
+                  : undefined
+              }
             />
           ))}
         </div>

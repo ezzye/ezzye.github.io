@@ -17,10 +17,12 @@ import { usePrivateForm } from '@/components/use-private-form';
 
 export function ActionResponseForm({
   actionId,
+  inviteToken,
   questions,
   disabledReason,
 }: {
   actionId: string;
+  inviteToken?: string;
   questions: string[];
   disabledReason?: string;
 }) {
@@ -36,6 +38,7 @@ export function ActionResponseForm({
     const data = new FormData(event.currentTarget);
     await submit({
       actionId,
+      inviteToken,
       answers: questions.map((_, index) => data.get(`answer${index + 1}`)),
       consentPrivateUse,
       consentAnonymousSummary,
@@ -66,7 +69,12 @@ export function ActionResponseForm({
         line for each is enough. We are testing the page, not you. Say what you
         really think. You can stop at any time, or write “skip”.
       </p>
-      <Link className="repair-link" href="/" target="_blank">
+      <Link
+        className="repair-link"
+        href="/"
+        target="_blank"
+        referrerPolicy="no-referrer"
+      >
         Open the home page in a new tab
       </Link>
       <FormStatus state={state} />
@@ -120,7 +128,10 @@ export function ActionResponseForm({
             disabled={Boolean(disabledReason)}
           />
           You may use my full answers for this private test. They will not be
-          posted. Needed to send.
+          posted. Needed to send.{' '}
+          <Link href="/privacy" target="_blank" referrerPolicy="no-referrer">
+            Read how we use and delete your answers.
+          </Link>
         </label>
         <label
           className="checkbox-line"

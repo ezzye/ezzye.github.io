@@ -1,9 +1,17 @@
 import { env } from 'cloudflare:workers';
 
 import { demoBundle } from '@/lib/demo-data';
+import {
+  createActionInviteToken,
+  hashActionInviteToken,
+} from '@/lib/action-invites';
+import { RESERVE_ACTION_INVITE_SQL } from '@/lib/action-invite-sql';
+import { pilotClosingInstant } from '@/lib/pilot-rules';
+import type { PilotApprovalTerms } from '@/lib/public-intake';
 import type {
   ActionCard,
   ActionOfferInput,
+  AdminActionInvite,
   AdminActionResponse,
   AdminAppeal,
   AdminProposal,
@@ -55,6 +63,8 @@ type ActionRow = {
   location_mode: string;
   owner_name: string;
   reviewer_name: string;
+  pilot_terms_approved_at: string | null;
+  pilot_approval_snapshot: string | null;
   capacity: number;
   status: ActionCard['status'];
   evidence_required: string;
@@ -106,6 +116,17 @@ type AdminActionResponseRow = {
   confirmed_adult: number;
   status: AdminActionResponse['status'];
   created_at: string;
+};
+
+type AdminActionInviteRow = {
+  id: string;
+  action_id: string;
+  action_title: string;
+  expires_at: string;
+  used_at: string | null;
+  revoked_at: string | null;
+  created_at: string;
+  is_expired: number;
 };
 
 function parseStringList(value: string): string[] {
@@ -181,6 +202,8 @@ function mapAction(row: ActionRow): ActionCard {
     locationMode: row.location_mode,
     ownerName: row.owner_name,
     reviewerName: row.reviewer_name,
+    pilotTermsApprovedAt: row.pilot_terms_approved_at,
+    pilotApprovalSnapshot: row.pilot_approval_snapshot,
     capacity: row.capacity,
     status: row.status,
     evidenceRequired: row.evidence_required,
@@ -292,6 +315,7 @@ export async function getPublicRepairBundle(
           time_size, compensation, participation_mode, response_questions,
           response_path, is_preview,
           skills_needed, location_mode, owner_name, reviewer_name,
+          pilot_terms_approved_at, pilot_approval_snapshot,
           capacity,
           CASE
             WHEN date(review_date) < date('now')
@@ -507,12 +531,379 @@ export async function createActionOffer(
   return id;
 }
 
+export type ActionInviteState =
+  | 'valid'
+  | 'used'
+  | 'expired'
+  | 'revoked'
+  | 'invalid';
+
+export async function getActionInviteState(
+  actionId: string,
+  tokenHash: string,
+): Promise<ActionInviteState> {
+  const row = await env.DB.prepare(
+    `SELECT ai.expires_at, ai.used_at, ai.revoked_at,
+      EXISTS(
+        SELECT 1 FROM action_responses ar WHERE ar.invite_id = ai.id
+      ) AS has_response
+     FROM action_invites ai
+     WHERE ai.action_id = ? AND ai.token_hash = ?`,
+  )
+    .bind(actionId, tokenHash)
+    .first<{
+      expires_at: string;
+      used_at: string | null;
+      revoked_at: string | null;
+      has_response: number;
+    }>();
+  if (!row) return 'invalid';
+  if (row.revoked_at) return 'revoked';
+  if (row.used_at || row.has_response) return 'used';
+  const expiry = new Date(row.expires_at).getTime();
+  if (!Number.isFinite(expiry) || expiry <= Date.now()) return 'expired';
+  return 'valid';
+}
+
+export type PilotActionSettings = PilotApprovalTerms & {
+  isPreview: boolean;
+};
+
+export async function getPilotActionSettings(
+  actionId: string,
+): Promise<PilotActionSettings | null> {
+  const row = await env.DB.prepare(
+    `SELECT title, intended_output, why_it_matters, time_size, compensation,
+      response_questions, response_path, skills_needed, location_mode,
+      owner_name, reviewer_name, capacity, evidence_required, review_date,
+      stop_condition, pilot_terms_approved_at, pilot_approval_snapshot,
+      is_preview
+     FROM action_cards
+     WHERE id = ? AND participation_mode = 'direct_response'`,
+  )
+    .bind(actionId)
+    .first<{
+      title: string;
+      intended_output: string;
+      why_it_matters: string;
+      time_size: string;
+      compensation: string;
+      response_questions: string;
+      response_path: string | null;
+      skills_needed: string;
+      location_mode: string;
+      owner_name: string;
+      reviewer_name: string;
+      capacity: number;
+      evidence_required: string;
+      review_date: string;
+      stop_condition: string;
+      pilot_terms_approved_at: string | null;
+      pilot_approval_snapshot: string | null;
+      is_preview: number;
+    }>();
+  return row
+    ? {
+        title: row.title,
+        intendedOutput: row.intended_output,
+        whyItMatters: row.why_it_matters,
+        timeSize: row.time_size,
+        compensation: row.compensation,
+        responseQuestions: parseStringList(row.response_questions),
+        responsePath: row.response_path,
+        skillsNeeded: row.skills_needed,
+        locationMode: row.location_mode,
+        ownerName: row.owner_name,
+        reviewerName: row.reviewer_name,
+        capacity: row.capacity,
+        evidenceRequired: row.evidence_required,
+        reviewDate: row.review_date,
+        stopCondition: row.stop_condition,
+        pilotTermsApprovedAt: row.pilot_terms_approved_at,
+        pilotApprovalSnapshot: row.pilot_approval_snapshot,
+        isPreview: Boolean(row.is_preview),
+      }
+    : null;
+}
+
+export async function createActionInvites(
+  actionId: string,
+  requestedCount: number,
+  expected: PilotActionSettings,
+): Promise<
+  Array<{
+    id: string;
+    token: string;
+    expiresAt: string;
+    responsePath: string;
+  }>
+> {
+  const action = await env.DB.prepare(
+    `SELECT a.capacity, a.review_date, a.response_path
+     FROM action_cards a
+     JOIN repairs r ON r.id = a.repair_id
+     WHERE a.id = ? AND r.is_published = 1 AND r.is_demo = 0
+       AND r.stage NOT IN ('closed', 'stopped')
+       AND a.participation_mode = 'direct_response'
+       AND a.response_path IS NOT NULL
+       AND a.compensation != 'Pay not set — job cannot open'
+       AND a.compensation = ? AND a.reviewer_name = ? AND a.review_date = ?
+       AND a.pilot_terms_approved_at = ?
+       AND a.pilot_approval_snapshot = ?
+       AND a.status IN ('ready', 'offered')`,
+  )
+    .bind(
+      actionId,
+      expected.compensation,
+      expected.reviewerName,
+      expected.reviewDate,
+      expected.pilotTermsApprovedAt,
+      expected.pilotApprovalSnapshot,
+    )
+    .first<{
+      capacity: number;
+      review_date: string;
+      response_path: string;
+    }>();
+  if (!action) return [];
+  const count = Math.min(Math.max(0, requestedCount), action.capacity);
+  const expiresAt = pilotClosingInstant(action.review_date);
+  if (!expiresAt || new Date(expiresAt).getTime() <= Date.now()) return [];
+  const createdAt = new Date().toISOString();
+  const created: Array<{
+    id: string;
+    token: string;
+    expiresAt: string;
+    responsePath: string;
+  }> = [];
+
+  for (let index = 0; index < count; index += 1) {
+    const id = `invite_${crypto.randomUUID()}`;
+    const token = createActionInviteToken();
+    const tokenHash = await hashActionInviteToken(token);
+    const inserted = await env.DB.prepare(RESERVE_ACTION_INVITE_SQL)
+      .bind(
+        id,
+        tokenHash,
+        expiresAt,
+        createdAt,
+        actionId,
+        expected.compensation,
+        expected.reviewerName,
+        expected.reviewDate,
+        expected.pilotTermsApprovedAt,
+        expected.pilotApprovalSnapshot,
+        expiresAt,
+      )
+      .run();
+    if (Number(inserted.meta.changes ?? 0) !== 1) continue;
+    created.push({
+      id,
+      token,
+      expiresAt,
+      responsePath: action.response_path,
+    });
+  }
+  return created;
+}
+
+export async function getAdminActionInvites(
+  repairId: string,
+): Promise<AdminActionInvite[]> {
+  const result = await env.DB.prepare(
+    `SELECT ai.id, ai.action_id, a.title AS action_title, ai.expires_at,
+      COALESCE(ai.used_at, ar.created_at) AS used_at, ai.revoked_at,
+      ai.created_at,
+      datetime(ai.expires_at) < datetime('now') AS is_expired
+     FROM action_invites ai
+     JOIN action_cards a ON a.id = ai.action_id
+     LEFT JOIN action_responses ar ON ar.invite_id = ai.id
+     WHERE a.repair_id = ?
+     ORDER BY ai.created_at DESC`,
+  )
+    .bind(repairId)
+    .all<AdminActionInviteRow>();
+  return result.results.map((row) => ({
+    id: row.id,
+    actionId: row.action_id,
+    actionTitle: row.action_title,
+    expiresAt: row.expires_at,
+    usedAt: row.used_at,
+    revokedAt: row.revoked_at,
+    createdAt: row.created_at,
+    isExpired:
+      Boolean(row.is_expired) ||
+      !Number.isFinite(new Date(row.expires_at).getTime()) ||
+      new Date(row.expires_at).getTime() <= Date.now(),
+  }));
+}
+
+export async function revokeActionInvite(id: string): Promise<boolean> {
+  const result = await env.DB.prepare(
+    `UPDATE action_invites SET revoked_at = ?
+     WHERE id = ? AND revoked_at IS NULL AND used_at IS NULL
+       AND NOT EXISTS (
+         SELECT 1 FROM action_responses ar
+         WHERE ar.invite_id = action_invites.id
+       )`,
+  )
+    .bind(new Date().toISOString(), id)
+    .run();
+  return Number(result.meta.changes ?? 0) === 1;
+}
+
+export async function updateActionPreview(
+  id: string,
+  isPreview: boolean,
+): Promise<boolean> {
+  if (isPreview) {
+    const results = await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE action_cards
+         SET is_preview = 1, pilot_terms_approved_at = NULL,
+           pilot_approval_snapshot = NULL
+         WHERE id = ? AND participation_mode = 'direct_response'`,
+      ).bind(id),
+      env.DB.prepare(
+        `UPDATE action_invites SET revoked_at = ?
+         WHERE action_id = ? AND revoked_at IS NULL AND used_at IS NULL
+           AND NOT EXISTS (
+             SELECT 1 FROM action_responses ar
+             WHERE ar.invite_id = action_invites.id
+           )`,
+      ).bind(new Date().toISOString(), id),
+    ]);
+    return Number(results[0]?.meta.changes ?? 0) === 1;
+  }
+  const result = await env.DB.prepare(
+    `UPDATE action_cards SET is_preview = 0
+     WHERE id = ? AND participation_mode = 'direct_response'
+       AND status IN ('ready', 'offered')
+       AND response_path IS NOT NULL
+       AND compensation != 'Pay not set — job cannot open'
+       AND pilot_terms_approved_at IS NOT NULL
+       AND pilot_approval_snapshot IS NOT NULL
+       AND EXISTS (
+         SELECT 1 FROM action_invites ai
+         WHERE ai.action_id = action_cards.id
+           AND ai.used_at IS NULL AND ai.revoked_at IS NULL
+           AND datetime(ai.expires_at) > datetime('now')
+           AND NOT EXISTS (
+             SELECT 1 FROM action_responses ar
+             WHERE ar.invite_id = ai.id
+           )
+       )`,
+  )
+    .bind(id)
+    .run();
+  return Number(result.meta.changes ?? 0) === 1;
+}
+
+export async function approvePilotActionTerms(
+  id: string,
+  approvalSnapshot: string,
+): Promise<boolean> {
+  const result = await env.DB.prepare(
+    `UPDATE action_cards
+     SET pilot_terms_approved_at = ?, pilot_approval_snapshot = ?
+     WHERE id = ? AND participation_mode = 'direct_response'
+       AND is_preview = 1
+       AND compensation != 'Pay not set — job cannot open'
+       AND NOT EXISTS (
+         SELECT 1 FROM action_responses ar
+         WHERE ar.action_id = action_cards.id
+       )
+       AND NOT EXISTS (
+         SELECT 1 FROM action_invites ai
+         WHERE ai.action_id = action_cards.id
+           AND ai.used_at IS NULL AND ai.revoked_at IS NULL
+           AND datetime(ai.expires_at) > datetime('now')
+       )`,
+  )
+    .bind(new Date().toISOString(), approvalSnapshot, id)
+    .run();
+  return Number(result.meta.changes ?? 0) === 1;
+}
+
+export async function updatePilotActionSettings(
+  id: string,
+  input: {
+    compensation: string;
+    reviewerName: string;
+    reviewDate: string;
+  },
+): Promise<boolean> {
+  const now = new Date().toISOString();
+  const stopCondition =
+    'Stop after five replies or on the closing date shown, whichever comes first. Check the five replies. Make a replacement link only if a reply cannot be used. Stop sooner if the page breaks, a question upsets someone or anyone sends private details.';
+  const results = await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE action_cards
+       SET compensation = ?, reviewer_name = ?, review_date = ?,
+         stop_condition = ?,
+         pilot_terms_approved_at = CASE
+           WHEN compensation = ? AND reviewer_name = ? AND review_date = ?
+             THEN pilot_terms_approved_at
+           ELSE NULL
+         END,
+         pilot_approval_snapshot = CASE
+           WHEN compensation = ? AND reviewer_name = ? AND review_date = ?
+             THEN pilot_approval_snapshot
+           ELSE NULL
+         END
+       WHERE id = ? AND participation_mode = 'direct_response'
+         AND is_preview = 1
+         AND NOT EXISTS (
+           SELECT 1 FROM action_responses ar
+           WHERE ar.action_id = action_cards.id
+         )
+         AND NOT EXISTS (
+           SELECT 1 FROM action_invites ai
+           WHERE ai.action_id = action_cards.id
+             AND ai.used_at IS NULL AND ai.revoked_at IS NULL
+             AND datetime(ai.expires_at) > datetime('now')
+         )`,
+    ).bind(
+      input.compensation,
+      input.reviewerName,
+      input.reviewDate,
+      stopCondition,
+      input.compensation,
+      input.reviewerName,
+      input.reviewDate,
+      input.compensation,
+      input.reviewerName,
+      input.reviewDate,
+      id,
+    ),
+    env.DB.prepare(
+      `UPDATE repairs SET review_date = ?, updated_at = ?
+       WHERE changes() = 1 AND id = (
+         SELECT repair_id FROM action_cards
+         WHERE id = ? AND review_date = ? AND compensation = ?
+           AND reviewer_name = ? AND is_preview = 1
+       )`,
+    ).bind(
+      input.reviewDate,
+      now,
+      id,
+      input.reviewDate,
+      input.compensation,
+      input.reviewerName,
+    ),
+  ]);
+  return Number(results[0]?.meta.changes ?? 0) === 1;
+}
+
 export async function getDirectActionTask(actionId: string): Promise<{
   questions: string[];
   capacity: number;
+  pilotTermsApprovedAt: string | null;
+  reviewDate: string;
 } | null> {
   const row = await env.DB.prepare(
-    `SELECT a.response_questions, a.capacity
+    `SELECT a.response_questions, a.capacity, a.pilot_terms_approved_at,
+      a.review_date
      FROM action_cards a
      JOIN repairs r ON r.id = a.repair_id
      WHERE a.id = ? AND r.is_published = 1 AND r.is_demo = 0
@@ -520,20 +911,27 @@ export async function getDirectActionTask(actionId: string): Promise<{
        AND a.participation_mode = 'direct_response'
        AND a.is_preview = 0 AND a.response_path IS NOT NULL
        AND a.compensation != 'Pay not set — job cannot open'
-       AND date(a.review_date) >= date('now')
        AND a.status IN ('ready', 'offered')`,
   )
     .bind(actionId)
-    .first<{ response_questions: string; capacity: number }>();
+    .first<{
+      response_questions: string;
+      capacity: number;
+      pilot_terms_approved_at: string | null;
+      review_date: string;
+    }>();
   if (!row) return null;
   return {
     questions: parseStringList(row.response_questions),
     capacity: row.capacity,
+    pilotTermsApprovedAt: row.pilot_terms_approved_at,
+    reviewDate: row.review_date,
   };
 }
 
 export async function createActionResponse(input: {
   actionId: string;
+  inviteTokenHash: string;
   answers: string[];
   consentPrivateUse: boolean;
   consentAnonymousSummary: boolean;
@@ -542,25 +940,34 @@ export async function createActionResponse(input: {
   const id = `response_${crypto.randomUUID()}`;
   const now = new Date().toISOString();
   const inserted = await env.DB.prepare(
-    `INSERT INTO action_responses (
-      id, action_id, questions, answers, consent_private_use,
+    `INSERT OR IGNORE INTO action_responses (
+      id, action_id, invite_id, questions, answers, consent_private_use,
       consent_anonymous_summary, confirmed_adult, status, created_at,
       updated_at
     )
-    SELECT ?, a.id, a.response_questions, ?, ?, ?, ?, 'new', ?, ?
+    SELECT ?, a.id, ai.id, a.response_questions, ?, ?, ?, ?, 'new', ?, ?
     FROM action_cards a
     JOIN repairs r ON r.id = a.repair_id
+    JOIN action_invites ai ON ai.action_id = a.id
     WHERE a.id = ? AND r.is_published = 1 AND r.is_demo = 0
         AND r.stage NOT IN ('closed', 'stopped')
         AND a.participation_mode = 'direct_response'
         AND a.is_preview = 0 AND a.response_path IS NOT NULL
         AND a.compensation != 'Pay not set — job cannot open'
-        AND date(a.review_date) >= date('now')
+        AND a.pilot_terms_approved_at IS NOT NULL
+        AND a.pilot_approval_snapshot IS NOT NULL
         AND a.status IN ('ready', 'offered')
-    AND (
-      SELECT COUNT(*) FROM action_responses
-      WHERE action_id = a.id AND status != 'rejected'
-    ) < a.capacity`,
+        AND ai.token_hash = ? AND ai.used_at IS NULL
+        AND ai.revoked_at IS NULL
+        AND datetime(ai.expires_at) > datetime('now')
+        AND NOT EXISTS (
+          SELECT 1 FROM action_responses used
+          WHERE used.invite_id = ai.id
+        )
+        AND (
+          SELECT COUNT(*) FROM action_responses
+          WHERE action_id = a.id AND status != 'rejected'
+        ) < a.capacity`,
   )
     .bind(
       id,
@@ -571,10 +978,20 @@ export async function createActionResponse(input: {
       now,
       now,
       input.actionId,
+      input.inviteTokenHash,
     )
     .run();
 
   if (Number(inserted.meta.changes ?? 0) !== 1) return null;
+
+  await env.DB.prepare(
+    `UPDATE action_invites SET used_at = ?
+     WHERE id = (
+       SELECT invite_id FROM action_responses WHERE id = ?
+     ) AND used_at IS NULL`,
+  )
+    .bind(now, id)
+    .run();
 
   await env.DB.prepare(
     `UPDATE action_cards SET status = 'review'
@@ -832,20 +1249,50 @@ export async function updateRepairStage(
   id: string,
   stage: string,
 ): Promise<void> {
+  const now = new Date().toISOString();
+  if (stage === 'closed' || stage === 'stopped') {
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE repairs SET stage = ?, updated_at = ? WHERE id = ?`,
+      ).bind(stage, now, id),
+      env.DB.prepare(
+        `UPDATE action_cards
+         SET is_preview = 1, pilot_terms_approved_at = NULL,
+           pilot_approval_snapshot = NULL
+         WHERE repair_id = ? AND participation_mode = 'direct_response'`,
+      ).bind(id),
+      env.DB.prepare(
+        `UPDATE action_invites SET revoked_at = ?
+         WHERE revoked_at IS NULL AND used_at IS NULL
+           AND action_id IN (
+             SELECT id FROM action_cards WHERE repair_id = ?
+           )
+           AND NOT EXISTS (
+             SELECT 1 FROM action_responses ar
+             WHERE ar.invite_id = action_invites.id
+           )`,
+      ).bind(now, id),
+    ]);
+    return;
+  }
   await env.DB.prepare(
     `UPDATE repairs SET stage = ?, updated_at = ? WHERE id = ?`,
   )
-    .bind(stage, new Date().toISOString(), id)
+    .bind(stage, now, id)
     .run();
 }
 
 export async function updateActionStatus(
   id: string,
   status: string,
-): Promise<void> {
-  await env.DB.prepare(`UPDATE action_cards SET status = ? WHERE id = ?`)
+): Promise<boolean> {
+  const result = await env.DB.prepare(
+    `UPDATE action_cards SET status = ?
+     WHERE id = ? AND participation_mode != 'direct_response'`,
+  )
     .bind(status, id)
     .run();
+  return Number(result.meta.changes ?? 0) === 1;
 }
 
 export async function publishOutcome(input: {

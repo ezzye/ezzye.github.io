@@ -1,5 +1,5 @@
 import { permanentRedirect } from 'next/navigation';
 
 export default function LegacyContactsPage() {
-  permanentRedirect('/appeal');
+  permanentRedirect('/privacy#contact');
 }

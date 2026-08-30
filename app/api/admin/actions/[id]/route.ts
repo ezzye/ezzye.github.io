@@ -1,5 +1,20 @@
-import { updateActionStatus } from '@/db/queries';
+import {
+  approvePilotActionTerms,
+  getPilotActionSettings,
+  updateActionPreview,
+  updateActionStatus,
+  updatePilotActionSettings,
+} from '@/db/queries';
 import { getAdminUser } from '@/lib/admin';
+import {
+  getCurrentPilotApprovalSnapshot,
+  getPublicContactEmail,
+  pilotPrivacyIsReady,
+  pilotRuntimeIsReady,
+  pilotTermsAreApproved,
+  publicIntakeIsOpen,
+} from '@/lib/public-intake';
+import { pilotClosingDateIsAllowed } from '@/lib/pilot-rules';
 import {
   errorResponse,
   readJsonObject,
@@ -27,10 +42,131 @@ export async function PATCH(
       return Response.json({ ok: false }, { status: 403 });
     const { id } = await params;
     const body = await readJsonObject(request, 2_000);
+    if (body.operation === 'pilot-settings') {
+      const compensation = stringField(body.compensation, 'compensation', {
+        minimum: 10,
+        maximum: 240,
+      })!;
+      const reviewerName = stringField(body.reviewerName, 'reviewerName', {
+        minimum: 2,
+        maximum: 120,
+      })!;
+      const reviewDate = stringField(body.reviewDate, 'reviewDate', {
+        minimum: 10,
+        maximum: 10,
+      })!;
+      if (!pilotClosingDateIsAllowed(reviewDate)) {
+        throw new RequestValidationError(
+          'Use a real closing date from 7 to 90 calendar days away.',
+        );
+      }
+      const changed = await updatePilotActionSettings(id, {
+        compensation,
+        reviewerName,
+        reviewDate,
+      });
+      if (!changed) {
+        throw new RequestValidationError(
+          'Stop or use every active link and remove any dummy replies before changing these details.',
+          {},
+          409,
+        );
+      }
+      return Response.json({ ok: true });
+    }
+    if (body.operation === 'approve-pilot-terms') {
+      const settings = await getPilotActionSettings(id);
+      if (!settings || !pilotClosingDateIsAllowed(settings.reviewDate)) {
+        throw new RequestValidationError(
+          'Set a real closing date from 7 to 90 days away before approving the test.',
+          {},
+          409,
+        );
+      }
+      if (publicIntakeIsOpen()) {
+        throw new RequestValidationError(
+          'Close the other private forms before approving this test.',
+          {},
+          409,
+        );
+      }
+      const approvalSnapshot = getCurrentPilotApprovalSnapshot(settings);
+      if (!approvalSnapshot) {
+        throw new RequestValidationError(
+          'Finish the privacy, recruitment, reply-reader and invitation-permission decisions before approving this test.',
+          {},
+          409,
+        );
+      }
+      const approved = await approvePilotActionTerms(id, approvalSnapshot);
+      if (!approved) {
+        throw new RequestValidationError(
+          'Stop every active link and remove any dummy replies before approving these details.',
+          {},
+          409,
+        );
+      }
+      return Response.json({ ok: true });
+    }
+    if (typeof body.isPreview === 'boolean') {
+      if (!body.isPreview && !getPublicContactEmail()) {
+        throw new RequestValidationError(
+          'Add the public privacy contact before opening this test.',
+          {},
+          409,
+        );
+      }
+      const settings = await getPilotActionSettings(id);
+      if (!body.isPreview && !pilotPrivacyIsReady(settings?.reviewDate)) {
+        throw new RequestValidationError(
+          'Finish the full pilot privacy details and record the check before opening this test.',
+          {},
+          409,
+        );
+      }
+      if (!body.isPreview && (!settings || !pilotTermsAreApproved(settings))) {
+        throw new RequestValidationError(
+          'Approve the exact questions, pay, people, privacy and dates before opening this test.',
+          {},
+          409,
+        );
+      }
+      if (!body.isPreview && publicIntakeIsOpen()) {
+        throw new RequestValidationError(
+          'Close the other private forms before opening this five-person test.',
+          {},
+          409,
+        );
+      }
+      if (!body.isPreview && (!settings || !pilotRuntimeIsReady(settings))) {
+        throw new RequestValidationError(
+          'The test is not ready to open.',
+          {},
+          409,
+        );
+      }
+      const changed = await updateActionPreview(id, body.isPreview);
+      if (!changed) {
+        throw new RequestValidationError(
+          body.isPreview
+            ? 'This test could not be stopped.'
+            : 'Create an unused one-use link and check the closing date before opening this test.',
+          {},
+          409,
+        );
+      }
+      return Response.json({ ok: true });
+    }
     const status = stringField(body.status, 'status', { maximum: 40 })!;
     if (!STATUSES.has(status))
       throw new RequestValidationError('Invalid status.');
-    await updateActionStatus(id, status);
+    if (!(await updateActionStatus(id, status))) {
+      throw new RequestValidationError(
+        'Use the first-five controls to change this test.',
+        {},
+        409,
+      );
+    }
     return Response.json({ ok: true });
   } catch (error) {
     return errorResponse(error);

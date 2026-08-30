@@ -67,6 +67,8 @@ export const actionCards = sqliteTable(
     locationMode: text('location_mode').notNull(),
     ownerName: text('owner_name').notNull(),
     reviewerName: text('reviewer_name').notNull(),
+    pilotTermsApprovedAt: text('pilot_terms_approved_at'),
+    pilotApprovalSnapshot: text('pilot_approval_snapshot'),
     capacity: integer('capacity').notNull(),
     status: text('status', {
       enum: [
@@ -91,6 +93,28 @@ export const actionCards = sqliteTable(
   ],
 );
 
+export const actionInvites = sqliteTable(
+  'action_invites',
+  {
+    id: text('id').primaryKey(),
+    actionId: text('action_id')
+      .notNull()
+      .references(() => actionCards.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: text('expires_at').notNull(),
+    usedAt: text('used_at'),
+    revokedAt: text('revoked_at'),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [
+    uniqueIndex('idx_action_invites_token_hash').on(table.tokenHash),
+    index('idx_action_invites_action_expiry').on(
+      table.actionId,
+      table.expiresAt,
+    ),
+  ],
+);
+
 export const actionResponses = sqliteTable(
   'action_responses',
   {
@@ -98,6 +122,7 @@ export const actionResponses = sqliteTable(
     actionId: text('action_id')
       .notNull()
       .references(() => actionCards.id, { onDelete: 'cascade' }),
+    inviteId: text('invite_id').references(() => actionInvites.id),
     questions: text('questions').notNull(),
     answers: text('answers').notNull(),
     consentPrivateUse: integer('consent_private_use', { mode: 'boolean' })
@@ -118,6 +143,7 @@ export const actionResponses = sqliteTable(
     updatedAt: text('updated_at').notNull(),
   },
   (table) => [
+    uniqueIndex('idx_action_responses_invite').on(table.inviteId),
     index('idx_action_responses_action_status').on(
       table.actionId,
       table.status,
