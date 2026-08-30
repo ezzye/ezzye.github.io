@@ -18,6 +18,11 @@
   separate built-Worker rehearsal checks the scheduled deletion job against a
   throw-away database. This is local proof, not proof that hosted scheduling is
   running.
+- Not proved: the owner-only Site has not recorded an automatic hosted deletion
+  heartbeat. A separate, route-less Cloudflare timer test is prepared in
+  [CLOUDFLARE_CANARY.md](CLOUDFLARE_CANARY.md). It can test direct Cloudflare
+  scheduling with an empty database; it cannot stand in for proof from Sites or
+  approve public access.
 - Done: full test replies carry a non-extendable deletion deadline. Overdue
   replies fail closed, the next site request tries to erase them, and the owner
   can stop the reply job and erase every full reply early. The retained deletion
@@ -106,6 +111,8 @@ The intake does not request addresses, credentials, identity numbers, case numbe
 
 - Server-rendered React application using the OpenAI Sites runtime.
 - Managed D1 database for repairs, actions, outcomes and private intake records.
+- A separate Cloudflare Worker/D1 package for a made-up-data timer test. It is
+  not deployed, has no public-domain route and never copies the Sites database.
 - A 15-minute scheduled deletion check, with the same deletion check on page
   requests as a backup and a content-free heartbeat visible to the owner.
 - Dispatch-owned ChatGPT sign-in for the protected review area.
@@ -153,6 +160,9 @@ The intake does not request addresses, credentials, identity numbers, case numbe
   record, cutover and rollback plan. It requires an exact before/after diff from
   Sites before approval and preserves every mail, nameserver and unrelated TXT
   record.
+- Do not turn the Cloudflare timer test into a public host by drift. A future
+  Cloudflare public-hosting choice would need a fresh plan for the whole DNS
+  zone, access and rollback. The Sites record values cannot approve it.
 
 ## Launch gate
 

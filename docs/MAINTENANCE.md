@@ -41,6 +41,9 @@ Stop after ten minutes unless the site is unsafe or losing data.
 1. Make one bounded change.
 2. Run `npm run verify:release`.
 3. Deploy owner-only first and check the exact saved version.
+   If the hosted automatic-check time is missing or old, keep invitations shut.
+   A private Cloudflare timer test may help find the fault, but its heartbeat is
+   not the Site's heartbeat.
 4. Record source, version, access, environment-key names, migration and
    content-free row counts in the release packet.
 5. Public access or DNS needs its own exact approval. A code change is not that

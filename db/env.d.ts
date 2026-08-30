@@ -1,6 +1,9 @@
 declare namespace Cloudflare {
   interface Env {
     DB: D1Database;
+    AUTH_GATE?: string;
+    CF_ACCESS_TEAM_DOMAIN?: string;
+    CF_ACCESS_AUD?: string;
     ADMIN_EMAIL?: string;
     PUBLIC_CONTACT_EMAIL?: string;
     PUBLIC_DATA_OWNER?: string;

@@ -35,7 +35,7 @@ const localBindingConfig = {
     : [],
 };
 
-export default defineConfig(async () => {
+export default defineConfig(async ({ mode }) => {
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= 'false';
@@ -45,6 +45,17 @@ export default defineConfig(async () => {
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import('@cloudflare/vite-plugin');
 
+  const isCloudflareCanary = mode === 'cloudflare-canary';
+  const cloudflarePlugin = isCloudflareCanary
+    ? cloudflare({
+        viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
+        configPath: './.wrangler/cloudflare-canary/wrangler.json',
+      })
+    : cloudflare({
+        viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
+        config: localBindingConfig,
+      });
+
   return {
     css: { postcss: { plugins: [tailwindcss()] } },
     server: isCodexSeatbeltSandbox
@@ -52,11 +63,8 @@ export default defineConfig(async () => {
       : undefined,
     plugins: [
       vinext(),
-      sites(),
-      cloudflare({
-        viteEnvironment: { name: 'rsc', childEnvironments: ['ssr'] },
-        config: localBindingConfig,
-      }),
+      ...(isCloudflareCanary ? [] : [sites()]),
+      cloudflarePlugin,
     ],
   };
 });

@@ -22,7 +22,7 @@ void test('does not force broken mail and rollback subdomains onto HTTPS', async
     rule.has?.some(
       (condition) =>
         condition.type === 'host' &&
-        condition.key === 'coding-for-justice.ezzye.chatgpt.site',
+        condition.value === 'coding-for-justice.ezzye.chatgpt.site',
     ),
   );
   assert.deepEqual(noindexRule?.headers, [

@@ -4,6 +4,11 @@
 owner approving that exact step. Public access, DNS, invitations, outreach and
 publishing real work are different decisions.
 
+**Sites plan only.** A private Cloudflare timer test does not change or approve
+the Sites records below. If Cloudflare is later chosen as the public host, stop
+and write a fresh plan for the full DNS zone, access and rollback; do not reuse
+these record values.
+
 The exact candidate and evidence belong in
 [PUBLIC_RELEASE_PACKET.md](PUBLIC_RELEASE_PACKET.md). Human choices belong in
 [LAUNCH_DECISIONS.md](LAUNCH_DECISIONS.md).

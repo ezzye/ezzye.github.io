@@ -1,6 +1,12 @@
 # Public release packet
 
-**Status: draft only. It is not permission to make anything public.**
+**Status: historical draft. Do not use it to make anything public.**
+
+The exact values below are an old snapshot, not the current candidate. They
+cannot approve access, DNS, rollback or publication. The public domain still
+serves the old GitHub Pages site. Any public move needs a fresh packet for the
+exact live private version, a separate access approval, then a fresh second
+packet and a separate DNS approval. Stop and refresh if any live value differs.
 
 This is the evidence form for two exact approval boundaries. Packet A covers
 owner-only to a public generated address. Packet B is made afterwards and
@@ -14,7 +20,7 @@ also becomes invalid before use if code, Site version, access, environment,
 database contents, domain instructions, DNS or the planned record diff changes.
 Refresh every live-state check within 30 minutes of asking for its approval.
 
-## Current verified baseline
+## Historical baseline — do not use for a release
 
 Captured on 30 August 2026 between 14:24 and 14:31 UTC.
 
@@ -76,6 +82,9 @@ Keep invitations and real result publication shut until the exact owner-only
 deployed version proves a recent automatic-check heartbeat and its access,
 environment and private row counts are rechecked. Local proof does not prove
 that the Sites control plane installed the cron trigger.
+
+A direct Cloudflare timer-test pass is useful fault-finding evidence only. It
+does not prove the timer on the exact Site version and cannot open this gate.
 
 ## Packet A — refresh after the final private deployment
 

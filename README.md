@@ -21,6 +21,12 @@ private drafts; it cannot read private answers or publish anything.
 
 See [the implementation plan](docs/IMPLEMENTATION_PLAN.md) and [the marketing plan](docs/MARKETING_PLAN.md).
 
+Sites has not yet proved that its hosted automatic deletion timer runs. A
+separately approved private Cloudflare test can run the same Worker with an
+empty throw-away database and no web address. That test cannot make the Site
+public or prove that Sites installed the timer. See the
+[private Cloudflare timer test](docs/CLOUDFLARE_CANARY.md).
+
 The owner-only rehearsal and any later, separately authorised five-person test
 use [the first-five runbook](docs/PILOT_RUNBOOK.md). Human choices are recorded
 in [the launch decision register](docs/LAUNCH_DECISIONS.md). The separately

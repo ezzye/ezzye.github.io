@@ -39,7 +39,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/:path*',
-        has: [{ type: 'host', key: SITES_GENERATED_HOST }],
+        has: [{ type: 'host', value: SITES_GENERATED_HOST }],
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
       },
       { source: '/', headers: securityHeaders },
