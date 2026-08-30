@@ -10,18 +10,22 @@ export function OutcomeCard({ outcome }: { outcome: Outcome }) {
     <Card className="outcome-card">
       <CardHeader>
         <div className="ledger-card-meta">
-          <ConfidenceBadge confidence={outcome.confidence} />
+          {outcome.repairIsDemo ? (
+            <span className="demo-page-banner">Made-up result</span>
+          ) : (
+            <ConfidenceBadge confidence={outcome.confidence} />
+          )}
           <span>{formatDate(outcome.publishedAt)}</span>
         </div>
         <CardTitle className="ledger-card-title">{outcome.title}</CardTitle>
       </CardHeader>
       <CardContent className="outcome-content">
         <div>
-          <p className="mini-label">Activity</p>
+          <p className="mini-label">What we did</p>
           <p>{outcome.activity}</p>
         </div>
         <div>
-          <p className="mini-label">Observed effect</p>
+          <p className="mini-label">What changed</p>
           <p>{outcome.observedEffect}</p>
         </div>
         <div className="outcome-limit">
@@ -30,7 +34,7 @@ export function OutcomeCard({ outcome }: { outcome: Outcome }) {
         </div>
         {outcome.repairSlug && (
           <Link className="repair-link" href={`/repairs/${outcome.repairSlug}`}>
-            Read the full repair
+            See all the work behind this
           </Link>
         )}
       </CardContent>

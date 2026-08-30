@@ -6,7 +6,7 @@ import { SiteShell } from '@/components/site-shell';
 import { getPublishedCorrections } from '@/db/queries';
 
 export const metadata: Metadata = {
-  title: 'Corrections and appeals',
+  title: 'Ask us to fix a mistake',
   description:
     'Ask for a factual correction, privacy removal, accessibility fix or moderation review.',
 };
@@ -17,12 +17,11 @@ export default async function AppealPage() {
   return (
     <SiteShell>
       <header className="page-hero compact-hero">
-        <p className="eyebrow">Accountability runs both ways</p>
-        <h1>Corrections and appeals</h1>
+        <p className="eyebrow">We can get things wrong</p>
+        <h1>Ask us to fix a mistake.</h1>
         <p>
-          Point to the exact claim or decision. A reviewer who did not make the
-          original decision should examine the evidence, privacy and covenant
-          rule.
+          Tell us which page or choice is wrong. Someone who did not make the
+          first choice should look at it.
         </p>
       </header>
 
@@ -31,21 +30,14 @@ export default async function AppealPage() {
         aria-labelledby="standard-title"
       >
         <div className="section-heading">
-          <p className="eyebrow">Review standard</p>
-          <h2 id="standard-title">Specific, private and reasoned.</h2>
+          <p className="eyebrow">What happens next</p>
+          <h2 id="standard-title">A second person checks it.</h2>
         </div>
         <ol>
-          <li>Immediate privacy or safety risks are triaged first.</li>
-          <li>
-            The original editor records the source and rule behind the decision.
-          </li>
-          <li>
-            A different reviewer considers the request and any public evidence.
-          </li>
-          <li>
-            The requester receives a reasoned decision; public errors enter the
-            correction log.
-          </li>
+          <li>We look at urgent safety or privacy risks first.</li>
+          <li>We write down why we made the first choice.</li>
+          <li>A different person checks your request and the proof.</li>
+          <li>We tell you what we chose and why. Public mistakes go below.</li>
         </ol>
       </section>
 
@@ -54,10 +46,8 @@ export default async function AppealPage() {
         aria-labelledby="appeal-form-title"
       >
         <div className="section-heading">
-          <p className="eyebrow">Private review request</p>
-          <h2 id="appeal-form-title">
-            Tell us exactly what needs another look.
-          </h2>
+          <p className="eyebrow">Private form</p>
+          <h2 id="appeal-form-title">What do we need to look at?</h2>
         </div>
         <AppealForm />
       </section>
@@ -67,8 +57,8 @@ export default async function AppealPage() {
         aria-labelledby="corrections-title"
       >
         <div className="section-heading">
-          <p className="eyebrow">Public record</p>
-          <h2 id="corrections-title">Correction log</h2>
+          <p className="eyebrow">Mistakes we fixed</p>
+          <h2 id="corrections-title">Public list</h2>
         </div>
         {corrections.length === 0 ? (
           <p className="empty-ledger">

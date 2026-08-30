@@ -62,6 +62,7 @@ type OutcomeRow = {
   repair_id: string;
   repair_slug?: string;
   repair_title?: string;
+  repair_is_demo?: number;
   title: string;
   activity: string;
   observed_effect: string;
@@ -160,6 +161,10 @@ function mapOutcome(row: OutcomeRow): Outcome {
     repairId: row.repair_id,
     repairSlug: row.repair_slug,
     repairTitle: row.repair_title,
+    repairIsDemo:
+      row.repair_is_demo === undefined
+        ? undefined
+        : Boolean(row.repair_is_demo),
     title: row.title,
     activity: row.activity,
     observedEffect: row.observed_effect,
@@ -301,6 +306,7 @@ export async function getLatestOutcomes(limit = 20): Promise<Outcome[]> {
   try {
     const result = await env.DB.prepare(
       `SELECT o.id, o.repair_id, r.slug AS repair_slug, r.title AS repair_title,
+        r.is_demo AS repair_is_demo,
         o.title, o.activity, o.observed_effect, o.evidence, o.evidence_url,
         o.confidence, o.verifier_name, o.who_benefited,
         o.what_did_not_change, o.learning, o.published_at, o.sort_order

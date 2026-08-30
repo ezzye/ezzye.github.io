@@ -10,20 +10,20 @@ import { ProposalForm } from '@/components/proposal-form';
 import { SiteShell } from '@/components/site-shell';
 
 export const metadata: Metadata = {
-  title: 'Bring a barrier',
+  title: 'Tell us what went wrong',
   description:
-    'Privately propose one repeatable unfair process for a bounded repair.',
+    'Tell us in private about one form, rule or service that keeps going wrong.',
 };
 
 export default function StartPage() {
   return (
     <SiteShell>
       <header className="page-hero compact-hero">
-        <p className="eyebrow">Private intake</p>
-        <h1>Bring a barrier, not a campaign.</h1>
+        <p className="eyebrow">Tell us in private</p>
+        <h1>Tell us about one unfair thing.</h1>
         <p>
-          Describe one repeatable process, who bears its cost and the smallest
-          change worth testing. Your submission is private by default.
+          Tell us what keeps going wrong. We will read it in private. Nothing
+          goes on the site until you see it and say yes.
         </p>
       </header>
 
@@ -33,34 +33,34 @@ export default function StartPage() {
       >
         <article>
           <EyeOff aria-hidden="true" />
-          <h2>Private first</h2>
+          <h2>We keep it private</h2>
           <p>
-            Nothing becomes public from this form. A redacted draft requires a
-            separate preview and your approval.
+            What you type here is not posted. If we write a page, you see it
+            first and can say yes or no.
           </p>
         </article>
         <article>
           <FileCheck2 aria-hidden="true" />
-          <h2>Process, not allegation</h2>
+          <h2>Leave out names and files</h2>
           <p>
-            Do not name private people or send case numbers, medical records,
-            passwords, witness statements or files.
+            Do not send names, case numbers, health records, passwords, witness
+            notes or private files.
           </p>
         </article>
         <article>
           <HeartHandshake aria-hidden="true" />
-          <h2>Small and adoptable</h2>
+          <h2>Tell us one thing</h2>
           <p>
-            A useful proposal has an affected-person perspective and someone
-            able to adopt or test the change.
+            Tell us what goes wrong, who it hurts and one small change that may
+            help.
           </p>
         </article>
         <article className="urgent-boundary">
           <AlertTriangle aria-hidden="true" />
-          <h2>Not an urgent channel</h2>
+          <h2>Not for danger or legal help</h2>
           <p>
-            This is not emergency support, legal advice, safeguarding casework
-            or a confidential whistleblowing service.
+            We cannot help in an emergency. We do not give legal advice, run
+            safety cases or take whistleblowing reports.
           </p>
         </article>
       </section>
@@ -70,14 +70,9 @@ export default function StartPage() {
         aria-labelledby="proposal-title"
       >
         <div className="section-heading">
-          <p className="eyebrow">Proposal form</p>
-          <h2 id="proposal-title">
-            Give the workshop something it can repair.
-          </h2>
-          <p>
-            Fields are deliberately structured so a difficult experience can
-            become a fair test without becoming outrage content.
-          </p>
+          <p className="eyebrow">The form</p>
+          <h2 id="proposal-title">Tell us what happened.</h2>
+          <p>Short is fine. Plain words are best.</p>
         </div>
         <ProposalForm />
       </section>

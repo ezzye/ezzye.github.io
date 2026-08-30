@@ -60,10 +60,10 @@ export function ProposalForm() {
       </div>
 
       <FieldSet>
-        <FieldLegend>1. The repeatable problem</FieldLegend>
+        <FieldLegend>1. What keeps going wrong?</FieldLegend>
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="workingTitle">Working title</FieldLabel>
+            <FieldLabel htmlFor="workingTitle">Give it a short name</FieldLabel>
             <Input
               id="workingTitle"
               name="workingTitle"
@@ -71,7 +71,7 @@ export function ProposalForm() {
               maxLength={120}
               required
               aria-invalid={Boolean(state.fields.workingTitle)}
-              placeholder="For example: Make a council form understandable on a phone"
+              placeholder="For example: This council form is hard to use on a phone"
             />
           </Field>
           <Field>
@@ -79,21 +79,21 @@ export function ProposalForm() {
             <Textarea
               id="problem"
               name="problem"
-              minLength={100}
+              minLength={30}
               maxLength={2000}
               required
               rows={7}
               aria-invalid={Boolean(state.fields.problem)}
-              placeholder="Describe the process and the recurring barrier. Do not include names of private people, case numbers or sensitive records."
+              placeholder="Tell us what happens. Leave out names, case numbers and private facts."
             />
             <FieldDescription>
-              100–2,000 characters. No accusations about named private people.
+              A few short lines is fine. Do not name private people.
             </FieldDescription>
           </Field>
           <div className="form-two-column">
             <Field>
               <FieldLabel htmlFor="broadLocation">
-                Broad location (optional)
+                Where is this? (optional)
               </FieldLabel>
               <Input
                 id="broadLocation"
@@ -103,7 +103,9 @@ export function ProposalForm() {
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="relationship">Your relationship</FieldLabel>
+              <FieldLabel htmlFor="relationship">
+                How do you know about it?
+              </FieldLabel>
               <NativeSelect
                 id="relationship"
                 name="relationship"
@@ -128,41 +130,41 @@ export function ProposalForm() {
           </div>
           <Field>
             <FieldLabel htmlFor="affectedGroups">
-              Who carries the cost?
+              Who does this hurt or shut out?
             </FieldLabel>
             <Textarea
               id="affectedGroups"
               name="affectedGroups"
-              minLength={20}
+              minLength={10}
               maxLength={800}
               required
               rows={4}
-              placeholder="Use broad, non-identifying descriptions. Include who may be missing."
+              placeholder="Use broad groups. Do not name people."
             />
           </Field>
         </FieldGroup>
       </FieldSet>
 
       <FieldSet>
-        <FieldLegend>2. Evidence and a useful first step</FieldLegend>
+        <FieldLegend>2. What do you know? What could help?</FieldLegend>
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="evidenceState">
-              What is known, unknown or disputed?
+              What have you seen or found out?
             </FieldLabel>
             <Textarea
               id="evidenceState"
               name="evidenceState"
-              minLength={20}
+              minLength={10}
               maxLength={1200}
               required
               rows={5}
-              placeholder="Separate what you observed, what someone reported, what a source supports and what still needs checking."
+              placeholder="Say what you saw, what someone told you and what still needs a check."
             />
           </Field>
           <Field>
             <FieldLabel htmlFor="sourceLinks">
-              Public source links (optional)
+              Links anyone can read (optional)
             </FieldLabel>
             <Textarea
               id="sourceLinks"
@@ -179,19 +181,21 @@ export function ProposalForm() {
           </Field>
           <Field>
             <FieldLabel htmlFor="desiredChange">
-              What would be measurably fairer?
+              What would better look like?
             </FieldLabel>
             <Textarea
               id="desiredChange"
               name="desiredChange"
-              minLength={20}
+              minLength={10}
               maxLength={1000}
               required
               rows={4}
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="firstStep">Smallest useful test</FieldLabel>
+            <FieldLabel htmlFor="firstStep">
+              What small thing could we try first?
+            </FieldLabel>
             <Textarea
               id="firstStep"
               name="firstStep"
@@ -199,17 +203,15 @@ export function ProposalForm() {
               maxLength={800}
               required
               rows={3}
-              placeholder="A step small enough to complete and check within a few weeks."
+              placeholder="One small step we could finish and check."
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="helpNeeded">
-              What help would be useful?
-            </FieldLabel>
+            <FieldLabel htmlFor="helpNeeded">What help do you need?</FieldLabel>
             <Textarea
               id="helpNeeded"
               name="helpNeeded"
-              minLength={10}
+              minLength={5}
               maxLength={500}
               required
               rows={3}
@@ -219,16 +221,16 @@ export function ProposalForm() {
       </FieldSet>
 
       <FieldSet>
-        <FieldLegend>3. Privacy and contact</FieldLegend>
+        <FieldLegend>3. Your name, email and say-so</FieldLegend>
         <FieldDescription>
-          These details stay private. Nothing above becomes public unless a
-          separate redacted draft is prepared and you approve it.
+          These details stay private. Nothing goes online until you see it and
+          say yes.
         </FieldDescription>
         <FieldGroup>
           <div className="form-two-column">
             <Field>
               <FieldLabel htmlFor="chosenName">
-                Chosen name or pseudonym (optional)
+                Name you want us to use (optional)
               </FieldLabel>
               <Input id="chosenName" name="chosenName" maxLength={100} />
             </Field>
@@ -239,7 +241,7 @@ export function ProposalForm() {
           </div>
           <Field>
             <FieldLabel htmlFor="contactPreference">
-              Contact preference (optional)
+              How and when should we get in touch? (optional)
             </FieldLabel>
             <Input
               id="contactPreference"
@@ -250,7 +252,7 @@ export function ProposalForm() {
           </Field>
           <Field>
             <FieldLabel htmlFor="accessibilityNeed">
-              Accessibility need (optional)
+              What would make this easier for you? (optional)
             </FieldLabel>
             <Textarea
               id="accessibilityNeed"
@@ -261,7 +263,7 @@ export function ProposalForm() {
           </Field>
           <Field>
             <FieldLabel htmlFor="privacyConcern">
-              Immediate privacy or safety concern (optional)
+              Is there anything we must keep out? (optional)
             </FieldLabel>
             <Textarea
               id="privacyConcern"
@@ -281,7 +283,8 @@ export function ProposalForm() {
                   if (checked) setBackgroundOnly(false);
                 }}
               />
-              Prepare a separate redacted public draft for my review.
+              Make a copy with names and private facts taken out. Send it to me
+              first.
             </label>
             <label className="checkbox-line" htmlFor="backgroundOnly">
               <Checkbox
@@ -292,7 +295,7 @@ export function ProposalForm() {
                   if (checked) setConsentRedactedDraft(false);
                 }}
               />
-              Keep this as private background only.
+              Keep all of this off the site.
             </label>
           </fieldset>
           <label className="checkbox-line" htmlFor="consentContact">
@@ -301,7 +304,7 @@ export function ProposalForm() {
               checked={consentContact}
               onCheckedChange={(value) => setConsentContact(Boolean(value))}
             />
-            You may contact me using the email I supplied.
+            You can email me.
           </label>
           <label className="checkbox-line" htmlFor="consentCredit">
             <Checkbox
@@ -309,8 +312,7 @@ export function ProposalForm() {
               checked={consentCredit}
               onCheckedChange={(value) => setConsentCredit(Boolean(value))}
             />
-            You may credit my chosen public name only after I approve the final
-            preview.
+            You can name me only after I say yes to the final page.
           </label>
           <label className="checkbox-line" htmlFor="consentAi">
             <Checkbox
@@ -318,8 +320,8 @@ export function ProposalForm() {
               checked={consentAi}
               onCheckedChange={(value) => setConsentAi(Boolean(value))}
             />
-            I permit specified AI assistance on this submission after I am told
-            the provider and purpose. This is off by default.
+            You may use AI only after you tell me which tool, what it will do,
+            and I say yes.
           </label>
         </FieldGroup>
       </FieldSet>
@@ -328,9 +330,9 @@ export function ProposalForm() {
         <Button type="submit" size="lg" disabled={state.kind === 'sending'}>
           {state.kind === 'sending'
             ? 'Sending privately…'
-            : 'Send private proposal'}
+            : 'Send this in private'}
         </Button>
-        <p>Not an emergency, legal-advice or whistleblowing channel.</p>
+        <p>Not for emergencies, legal help or whistleblowing.</p>
       </div>
     </form>
   );

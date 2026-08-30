@@ -42,8 +42,8 @@ export function OfferHelpForm({
     <form className="offer-form" onSubmit={handleSubmit} noValidate>
       <h4>Offer help with “{actionTitle}”</h4>
       <p>
-        This does not assign the task immediately. The owner will check fit,
-        capacity and boundaries first.
+        This does not give you the job yet. We will first check that it is safe,
+        clear and right for you.
       </p>
       <FormStatus state={state} />
       <div className="honeypot" aria-hidden="true">
@@ -82,7 +82,7 @@ export function OfferHelpForm({
         </div>
         <Field>
           <FieldLabel htmlFor={`offer-contribution-${actionId}`}>
-            What can you contribute to this output?
+            How could you help?
           </FieldLabel>
           <Textarea
             id={`offer-contribution-${actionId}`}
@@ -95,7 +95,7 @@ export function OfferHelpForm({
         </Field>
         <Field>
           <FieldLabel htmlFor={`offer-access-${actionId}`}>
-            Accessibility need (optional)
+            What would make this easier for you? (optional)
           </FieldLabel>
           <Input
             id={`offer-access-${actionId}`}
@@ -109,8 +109,8 @@ export function OfferHelpForm({
             checked={covenantAccepted}
             onCheckedChange={(value) => setCovenantAccepted(Boolean(value))}
           />
-          I affirm the community covenant: DEI, dignity, evidence, no pile-ons
-          and correction when evidence changes.
+          I will treat people with care, back claims with proof and never join a
+          pile-on.
         </label>
         <label className="checkbox-line" htmlFor={`offer-contact-${actionId}`}>
           <Checkbox
@@ -118,11 +118,11 @@ export function OfferHelpForm({
             checked={consentContact}
             onCheckedChange={(value) => setConsentContact(Boolean(value))}
           />
-          Coding for Justice may contact me about this bounded task.
+          Coding for Justice may email me about this small job.
         </label>
         <FieldDescription>
-          Your offer and contact details stay private. They are not a public
-          endorsement or profile.
+          Your offer and email stay private. We will not put your name on the
+          site.
         </FieldDescription>
       </FieldGroup>
       <Button type="submit" disabled={state.kind === 'sending'}>

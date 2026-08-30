@@ -2,29 +2,29 @@ import { Badge } from '@/components/ui/badge';
 import type { ActionStatus, OutcomeConfidence, RepairStage } from '@/lib/types';
 
 const stageLabels: Record<RepairStage, string> = {
-  listening: 'Listening',
-  framing: 'Framing',
-  acting: 'Acting',
-  checking: 'Checking',
-  closed: 'Closed',
+  listening: 'Hearing people',
+  framing: 'Working out the problem',
+  acting: 'Work under way',
+  checking: 'Being checked',
+  closed: 'Done',
   stopped: 'Stopped',
 };
 
 const actionLabels: Record<ActionStatus, string> = {
-  ready: 'Ready',
-  offered: 'Offers received',
-  assigned: 'Assigned',
-  doing: 'In progress',
-  review: 'In review',
-  verified: 'Verified',
-  blocked: 'Blocked',
+  ready: 'Help wanted',
+  offered: 'Someone offered',
+  assigned: 'Taken',
+  doing: 'Being done',
+  review: 'Being checked',
+  verified: 'Done and checked',
+  blocked: 'Stuck',
   stopped: 'Stopped',
 };
 
 const confidenceLabels: Record<OutcomeConfidence, string> = {
-  claimed: 'Claimed',
-  observed: 'Observed',
-  independently_verified: 'Independently verified',
+  claimed: 'Someone told us',
+  observed: 'We saw it',
+  independently_verified: 'Someone else checked it',
 };
 
 export function RepairStageBadge({ stage }: { stage: RepairStage }) {

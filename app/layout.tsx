@@ -15,11 +15,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://codingforjustice.org.uk'),
   title: {
-    default: 'Coding for Justice — Fairness repair workshop',
+    default: 'Coding for Justice — Small jobs that fix unfair things',
     template: '%s — Coding for Justice',
   },
   description:
-    'A public workshop for turning repeatable unfair processes into practical, evidenced repairs.',
+    'Pick a small job, tell us what keeps going wrong, or see what changed.',
   icons: {
     icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
     shortcut: '/favicon.svg',
@@ -28,23 +28,23 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_GB',
     siteName: 'Coding for Justice',
-    title: 'Coding for Justice — Turn concern into repair',
+    title: 'Coding for Justice — Small jobs. Fairer rules.',
     description:
-      'A public workshop for turning repeatable unfair processes into practical, evidenced repairs.',
+      'Pick a small job, tell us what keeps going wrong, or see what changed.',
     images: [
       {
         url: '/og.png',
         width: 1200,
         height: 630,
-        alt: 'Coding for Justice — Turn concern into repair',
+        alt: 'Coding for Justice — Small jobs. Fairer rules.',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Coding for Justice — Turn concern into repair',
+    title: 'Coding for Justice — Small jobs. Fairer rules.',
     description:
-      'A public workshop for turning repeatable unfair processes into practical, evidenced repairs.',
+      'Pick a small job, tell us what keeps going wrong, or see what changed.',
     images: ['/og.png'],
   },
 };

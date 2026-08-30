@@ -33,32 +33,39 @@ export default async function RepairPage({ params }: PageProps) {
     <SiteShell>
       <header className="page-hero repair-page-hero">
         <div className="ledger-card-meta">
-          <span>{repair.id}</span>
-          {repair.isDemo && <span className="demo-label">Demonstration</span>}
+          {repair.isDemo ? (
+            <span className="demo-page-banner">
+              Made-up example — no real job is open
+            </span>
+          ) : (
+            <span>{repair.id}</span>
+          )}
           <RepairStageBadge stage={repair.stage} />
         </div>
         <h1>{repair.title}</h1>
         <p>{repair.summary}</p>
+        <p className="page-help">
+          Read this page to see what is wrong. Jump to the small jobs to see how
+          helping would work.
+        </p>
         <dl className="hero-ledger">
           <div>
             <dt>
-              <UserRoundCheck aria-hidden="true" /> Owner
+              <UserRoundCheck aria-hidden="true" /> Lead
             </dt>
             <dd>{repair.ownerName}</dd>
           </div>
           <div>
             <dt>
-              <CalendarClock aria-hidden="true" /> Review
+              <CalendarClock aria-hidden="true" /> Check again
             </dt>
             <dd>{formatDate(repair.reviewDate)}</dd>
           </div>
           <div>
             <dt>
-              <ShieldCheck aria-hidden="true" /> Partner
+              <ShieldCheck aria-hidden="true" /> Group we work with
             </dt>
-            <dd>
-              {repair.partnerName ?? 'Not yet secured — demonstration only'}
-            </dd>
+            <dd>{repair.partnerName ?? 'None — this page is made up'}</dd>
           </div>
         </dl>
       </header>
@@ -68,59 +75,74 @@ export default async function RepairPage({ params }: PageProps) {
         aria-labelledby="frame-title"
       >
         <div className="section-heading">
-          <p className="eyebrow">Problem frame</p>
-          <h2 id="frame-title">What we can responsibly say</h2>
+          <p className="eyebrow">The problem</p>
+          <h2 id="frame-title">What we know</h2>
         </div>
         <dl>
           <div>
-            <dt>Scope</dt>
+            <dt>Where this happens</dt>
             <dd>{repair.scope}</dd>
           </div>
           <div>
-            <dt>Who may carry the cost</dt>
+            <dt>Who gets hurt or shut out</dt>
             <dd>{repair.affectedGroups}</dd>
           </div>
           <div>
-            <dt>Known</dt>
+            <dt>What we know</dt>
             <dd>{repair.knownFacts}</dd>
           </div>
           <div>
-            <dt>Unknown</dt>
+            <dt>What we do not know</dt>
             <dd>{repair.unknowns}</dd>
           </div>
           <div>
-            <dt>Disputed</dt>
+            <dt>What people do not agree on</dt>
             <dd>{repair.disputedClaims}</dd>
           </div>
           <div>
-            <dt>Measurably fairer</dt>
+            <dt>What better would look like</dt>
             <dd>{repair.desiredChange}</dd>
           </div>
           <div>
-            <dt>Smallest test</dt>
+            <dt>What we will try first</dt>
             <dd>{repair.smallestTest}</dd>
           </div>
           <div className="safeguard-row">
-            <dt>Safeguards and stop rule</dt>
+            <dt>How we keep people safe — and when we stop</dt>
             <dd>{repair.safeguards}</dd>
           </div>
         </dl>
       </section>
 
-      <section className="page-section" aria-labelledby="actions-title">
+      <section
+        className="page-section"
+        id="open-jobs"
+        aria-labelledby="actions-title"
+      >
         <div className="section-heading split-heading">
           <div>
-            <p className="eyebrow">Action cards</p>
-            <h2 id="actions-title">Small enough to own and check</h2>
+            <p className="eyebrow">
+              {repair.isDemo ? 'Example jobs' : 'Small jobs'}
+            </p>
+            <h2 id="actions-title">
+              {repair.isDemo
+                ? 'See how helping would work'
+                : 'Pick one small job'}
+            </h2>
           </div>
           <p>
-            An offer does not assign a task. Every contribution is reviewed for
-            fit, boundaries and capacity before contact.
+            {repair.isDemo
+              ? 'These jobs are made up. You cannot sign up. A real job will say if it is paid or unpaid.'
+              : 'Saying “I can help” does not give you the job. We first check it is safe, clear and a good fit.'}
           </p>
         </div>
         <div className="card-grid action-grid">
           {actions.map((action) => (
-            <ActionCard key={action.id} action={action} />
+            <ActionCard
+              key={action.id}
+              action={action}
+              isDemo={repair.isDemo}
+            />
           ))}
         </div>
       </section>
@@ -131,8 +153,8 @@ export default async function RepairPage({ params }: PageProps) {
           aria-labelledby="updates-title"
         >
           <div className="section-heading">
-            <p className="eyebrow">Workshop notes</p>
-            <h2 id="updates-title">What changed since the last review</h2>
+            <p className="eyebrow">News</p>
+            <h2 id="updates-title">What changed since the last check</h2>
           </div>
           <div className="timeline-list">
             {updates.map((update) => (
@@ -142,15 +164,15 @@ export default async function RepairPage({ params }: PageProps) {
                 <p>{update.body}</p>
                 <dl>
                   <div>
-                    <dt>Evidence changed</dt>
+                    <dt>New facts</dt>
                     <dd>{update.evidenceChanged}</dd>
                   </div>
                   <div>
-                    <dt>Still unfair</dt>
+                    <dt>What is still wrong</dt>
                     <dd>{update.remainsUnfair}</dd>
                   </div>
                   <div>
-                    <dt>Next owner and review</dt>
+                    <dt>Who goes next — and when we check</dt>
                     <dd>
                       {update.nextOwner}, {formatDate(update.nextReviewDate)}
                     </dd>
@@ -164,17 +186,22 @@ export default async function RepairPage({ params }: PageProps) {
 
       <section className="page-section" aria-labelledby="repair-outcomes-title">
         <div className="section-heading">
-          <p className="eyebrow">Outcome ledger</p>
-          <h2 id="repair-outcomes-title">What happened</h2>
+          <p className="eyebrow">Result</p>
+          <h2 id="repair-outcomes-title">What changed</h2>
         </div>
         {outcomes.length > 0 ? (
           <div className="card-grid">
             {outcomes.map((outcome) => (
-              <OutcomeCard key={outcome.id} outcome={outcome} />
+              <OutcomeCard
+                key={outcome.id}
+                outcome={{ ...outcome, repairIsDemo: repair.isDemo }}
+              />
             ))}
           </div>
         ) : (
-          <p className="empty-ledger">No outcome has passed review yet.</p>
+          <p className="empty-ledger">
+            Nothing has been checked and shown yet.
+          </p>
         )}
       </section>
     </SiteShell>

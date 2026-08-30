@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { SiteShell } from '@/components/site-shell';
 
 export const metadata: Metadata = {
-  title: 'Legacy archive',
+  title: 'Old site',
   description:
     'The preserved 2021 Coding for Justice site and its historical context.',
 };
@@ -31,12 +31,11 @@ export default function ArchivePage() {
   return (
     <SiteShell>
       <header className="page-hero compact-hero">
-        <p className="eyebrow">Preserved, not quietly rewritten</p>
-        <h1>Legacy archive</h1>
+        <p className="eyebrow">The old site</p>
+        <h1>We did not wipe the past.</h1>
         <p>
-          The original GitHub Pages site remains in source control as a rollback
-          point and historical record. Phase one changes the method: from static
-          advocacy pages to bounded repairs and public outcome evidence.
+          The pages from 2021 are still on GitHub. The new site works in a
+          different way: one small job at a time, followed by a clear result.
         </p>
       </header>
       <section className="page-section archive-list" aria-label="Legacy pages">
@@ -47,17 +46,16 @@ export default function ArchivePage() {
             <a
               href={`https://github.com/ezzye/ezzye.github.io/blob/master/${item.path}`}
             >
-              View preserved source on GitHub
+              Read the old page on GitHub
             </a>
           </article>
         ))}
       </section>
       <section className="page-section archive-note">
-        <h2>Historical material is not a current allegation.</h2>
+        <h2>Old words are not new claims.</h2>
         <p>
-          Archive links preserve provenance. They do not certify that every old
-          statement is current, complete or suitable for a new repair. A current
-          claim must be reframed, sourced and reviewed under the covenant.
+          An old page may be out of date or wrong. If we use an old claim again,
+          we must check it and show where it came from.
         </p>
       </section>
     </SiteShell>

@@ -3,42 +3,41 @@ import type { Metadata } from 'next';
 import { SiteShell } from '@/components/site-shell';
 
 export const metadata: Metadata = {
-  title: 'Accessibility',
+  title: 'Help with access',
   description:
-    'The phase-one accessibility standard and how to report a barrier.',
+    'How we are making this site easier to use and how to tell us when it is not.',
 };
 
 export default function AccessibilityPage() {
   return (
     <SiteShell>
       <header className="page-hero compact-hero">
-        <p className="eyebrow">Access is part of fairness</p>
-        <h1>Accessibility statement</h1>
+        <p className="eyebrow">Help with access</p>
+        <h1>This site should be easy to read and use.</h1>
         <p>
-          The phase-one site aims to work with a keyboard, screen magnification,
-          reduced motion and common screen readers, using plain language and
-          visible focus throughout.
+          It should work with a keyboard, big text and a screen reader. It
+          should also use short, plain words. We are still testing it.
         </p>
       </header>
       <section className="page-section prose-page">
-        <h2>Current standard</h2>
+        <h2>What we aim for</h2>
         <p>
-          We are targeting WCAG 2.2 AA, with semantic headings, labelled
-          controls, error summaries, no colour-only status and layouts that
-          reflow on small screens and at 200% zoom. A claim of conformance
-          requires independent testing; phase one does not make that claim yet.
+          We aim to meet WCAG 2.2 AA. That means clear headings, named buttons,
+          useful error messages and pages that still work on a small screen or
+          with text twice the size. We cannot claim that yet. Someone outside
+          the project still needs to check it.
         </p>
-        <h2>Known limits</h2>
+        <h2>What we have not done yet</h2>
         <p>
-          The site has not yet completed testing with affected users or a full
-          screen-reader matrix. The historical archive may not meet the current
-          standard. External evidence links are outside our control.
+          We have not yet tested the whole site with disabled people or every
+          common screen reader. The old site and other sites we link to may be
+          harder to use.
         </p>
-        <h2>Report a barrier</h2>
+        <h2>Tell us what is hard</h2>
         <p>
-          Use the corrections and appeals form and choose “Accessibility
-          problem”. Include the page, browser or assistive technology if you are
-          comfortable. You do not need to disclose a diagnosis.
+          Use the “Ask us to fix a mistake” form and choose “Accessibility
+          problem”. Tell us which page went wrong. You do not need to tell us a
+          diagnosis.
         </p>
       </section>
     </SiteShell>

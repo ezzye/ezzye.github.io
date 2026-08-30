@@ -13,15 +13,24 @@ import { ActionStatusBadge } from '@/components/workshop-status';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ActionCard as ActionCardType } from '@/lib/types';
 
-export function ActionCard({ action }: { action: ActionCardType }) {
+export function ActionCard({
+  action,
+  isDemo = false,
+}: {
+  action: ActionCardType;
+  isDemo?: boolean;
+}) {
   const acceptingOffers =
     action.status === 'ready' || action.status === 'offered';
   return (
     <Card className="action-card">
       <CardHeader>
         <div className="ledger-card-meta">
-          <span>{action.id}</span>
-          <ActionStatusBadge status={action.status} />
+          {isDemo ? (
+            <span className="demo-label">Made-up job — not open</span>
+          ) : (
+            <ActionStatusBadge status={action.status} />
+          )}
         </div>
         <CardTitle className="ledger-card-title">{action.title}</CardTitle>
       </CardHeader>
@@ -42,7 +51,7 @@ export function ActionCard({ action }: { action: ActionCardType }) {
           </div>
           <div>
             <dt>
-              <Users aria-hidden="true" /> Capacity
+              <Users aria-hidden="true" /> People needed
             </dt>
             <dd>
               {action.capacity} contributor{action.capacity === 1 ? '' : 's'}
@@ -50,38 +59,49 @@ export function ActionCard({ action }: { action: ActionCardType }) {
           </div>
           <div>
             <dt>
-              <CalendarClock aria-hidden="true" /> Review
+              <CalendarClock aria-hidden="true" /> Check by
             </dt>
             <dd>{formatDate(action.reviewDate)}</dd>
           </div>
         </dl>
-        <div className="action-detail-grid">
-          <div>
-            <p className="mini-label">Why it matters</p>
-            <p>{action.whyItMatters}</p>
+        <p className="job-skill">
+          <strong>Skills:</strong> {action.skillsNeeded}
+        </p>
+        {isDemo && (
+          <p className="demo-job-stop">
+            This job is made up. No work or pay is being offered.
+          </p>
+        )}
+        <details className="job-more">
+          <summary>More about this job</summary>
+          <div className="action-detail-grid">
+            <div>
+              <p className="mini-label">Why it matters</p>
+              <p>{action.whyItMatters}</p>
+            </div>
+            <div>
+              <p className="mini-label">How we know it is done</p>
+              <p>{action.evidenceRequired}</p>
+            </div>
+            <div>
+              <p className="mini-label">
+                <ShieldCheck aria-hidden="true" /> Who does it — who checks it
+              </p>
+              <p>
+                {action.ownerName} → {action.reviewerName}
+              </p>
+            </div>
+            <div>
+              <p className="mini-label">
+                <CircleStop aria-hidden="true" /> When to stop
+              </p>
+              <p>{action.stopCondition}</p>
+            </div>
           </div>
-          <div>
-            <p className="mini-label">Completion evidence</p>
-            <p>{action.evidenceRequired}</p>
-          </div>
-          <div>
-            <p className="mini-label">
-              <ShieldCheck aria-hidden="true" /> Review pair
-            </p>
-            <p>
-              {action.ownerName} → {action.reviewerName}
-            </p>
-          </div>
-          <div>
-            <p className="mini-label">
-              <CircleStop aria-hidden="true" /> Stop condition
-            </p>
-            <p>{action.stopCondition}</p>
-          </div>
-        </div>
-        {acceptingOffers && (
+        </details>
+        {!isDemo && acceptingOffers && (
           <details className="offer-disclosure">
-            <summary>Offer help with this bounded task</summary>
+            <summary>I can help with this job</summary>
             <OfferHelpForm actionId={action.id} actionTitle={action.title} />
           </details>
         )}

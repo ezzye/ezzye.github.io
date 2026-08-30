@@ -15,6 +15,13 @@
       "when": 1788080522491,
       "tag": "0001_watery_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1788083349963,
+      "tag": "0002_plain_language_demo",
+      "breakpoints": true
     }
   ]
 }

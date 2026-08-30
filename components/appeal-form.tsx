@@ -49,7 +49,7 @@ export function AppealForm() {
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="itemReference">
-            Page, repair or decision
+            Which page or choice is wrong?
           </FieldLabel>
           <Input
             id="itemReference"
@@ -57,11 +57,11 @@ export function AppealForm() {
             required
             minLength={2}
             maxLength={240}
-            placeholder="URL, repair reference or moderation decision"
+            placeholder="Paste the page link or name the choice"
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="requestType">What kind of review?</FieldLabel>
+          <FieldLabel htmlFor="requestType">What went wrong?</FieldLabel>
           <NativeSelect
             id="requestType"
             name="requestType"
@@ -70,25 +70,25 @@ export function AppealForm() {
           >
             <NativeSelectOption value="">Choose one</NativeSelectOption>
             <NativeSelectOption value="factual-correction">
-              Factual correction
+              A fact is wrong
             </NativeSelectOption>
             <NativeSelectOption value="privacy-removal">
-              Privacy or removal
+              Take down private words
             </NativeSelectOption>
             <NativeSelectOption value="moderation-review">
-              Moderation appeal
+              A site rule was used badly
             </NativeSelectOption>
             <NativeSelectOption value="accessibility">
               Accessibility problem
             </NativeSelectOption>
             <NativeSelectOption value="other">
-              Another review
+              Something else
             </NativeSelectOption>
           </NativeSelect>
         </Field>
         <Field>
           <FieldLabel htmlFor="explanation">
-            What should be reviewed, and why?
+            What should we look at, and why?
           </FieldLabel>
           <Textarea
             id="explanation"
@@ -99,13 +99,13 @@ export function AppealForm() {
             rows={7}
           />
           <FieldDescription>
-            Explain the specific claim or decision. Immediate privacy and safety
-            requests are prioritised.
+            Be as clear as you can. We look at urgent safety and privacy risks
+            first.
           </FieldDescription>
         </Field>
         <Field>
           <FieldLabel htmlFor="evidenceLinks">
-            Relevant public links (optional)
+            Public links that may help (optional)
           </FieldLabel>
           <Textarea
             id="evidenceLinks"
@@ -128,7 +128,7 @@ export function AppealForm() {
           </Field>
           <Field>
             <FieldLabel htmlFor="appealAccessibility">
-              Accessibility need (optional)
+              What would make this easier? (optional)
             </FieldLabel>
             <Input
               id="appealAccessibility"
@@ -139,9 +139,7 @@ export function AppealForm() {
         </div>
       </FieldGroup>
       <Button type="submit" size="lg" disabled={state.kind === 'sending'}>
-        {state.kind === 'sending'
-          ? 'Sending privately…'
-          : 'Request an independent review'}
+        {state.kind === 'sending' ? 'Sending privately…' : 'Ask us to check it'}
       </Button>
     </form>
   );

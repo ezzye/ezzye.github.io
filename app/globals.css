@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: Georgia, 'Times New Roman', serif;
+  --font-heading: var(--font-geist-sans), Arial, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,30 +49,30 @@
 }
 
 :root {
-  --background: oklch(0.97 0.017 88);
-  --foreground: oklch(0.23 0.035 167);
-  --card: oklch(0.995 0.006 88);
-  --card-foreground: oklch(0.23 0.035 167);
-  --popover: oklch(0.995 0.006 88);
-  --popover-foreground: oklch(0.23 0.035 167);
-  --primary: oklch(0.39 0.094 163);
-  --primary-foreground: oklch(0.985 0.008 88);
-  --secondary: oklch(0.91 0.035 84);
-  --secondary-foreground: oklch(0.28 0.045 165);
-  --muted: oklch(0.925 0.018 86);
-  --muted-foreground: oklch(0.46 0.025 164);
-  --accent: oklch(0.83 0.135 90);
-  --accent-foreground: oklch(0.25 0.04 164);
+  --background: oklch(0.985 0.012 94);
+  --foreground: oklch(0.19 0.015 255);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.19 0.015 255);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.19 0.015 255);
+  --primary: oklch(0.42 0.19 258);
+  --primary-foreground: oklch(0.99 0.004 95);
+  --secondary: oklch(0.93 0.025 92);
+  --secondary-foreground: oklch(0.22 0.02 255);
+  --muted: oklch(0.94 0.015 94);
+  --muted-foreground: oklch(0.39 0.02 255);
+  --accent: oklch(0.88 0.16 92);
+  --accent-foreground: oklch(0.2 0.02 255);
   --destructive: oklch(0.52 0.19 28);
-  --border: oklch(0.81 0.028 84);
-  --input: oklch(0.81 0.028 84);
-  --ring: oklch(0.53 0.1 163);
+  --border: oklch(0.79 0.02 92);
+  --input: oklch(0.79 0.02 92);
+  --ring: oklch(0.52 0.18 258);
   --chart-1: oklch(0.39 0.094 163);
   --chart-2: oklch(0.68 0.12 86);
   --chart-3: oklch(0.55 0.08 220);
   --chart-4: oklch(0.57 0.12 40);
   --chart-5: oklch(0.45 0.07 300);
-  --radius: 0.7rem;
+  --radius: 0.45rem;
   --sidebar: oklch(0.955 0.018 88);
   --sidebar-foreground: oklch(0.23 0.035 167);
   --sidebar-primary: oklch(0.39 0.094 163);
@@ -130,12 +130,17 @@
   body {
     @apply bg-background text-foreground;
     min-width: 320px;
+    font-family: var(--font-geist-sans), Arial, sans-serif;
+    font-size: 18px;
+    line-height: 1.55;
   }
 
   h1,
   h2,
   h3 {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--font-geist-sans), Arial, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.035em;
   }
 
   a {
@@ -174,7 +179,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.7rem;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -1520,13 +1525,472 @@
   padding-left: 1.2rem;
 }
 
+/* The front page is a set of plain choices, not a dashboard. */
+.plain-home {
+  max-width: 78rem;
+  margin-inline: auto;
+  padding: clamp(3rem, 6vw, 5rem) clamp(1rem, 5vw, 4rem) 3rem;
+}
+
+.plain-intro {
+  max-width: 58rem;
+}
+
+.plain-kicker {
+  margin-bottom: 0.8rem;
+  color: var(--primary);
+  font-size: 0.95rem;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+.plain-intro h1 {
+  max-width: 16ch;
+  font-size: clamp(3rem, 6vw, 5.4rem);
+  line-height: 0.98;
+}
+
+.plain-answers {
+  display: grid;
+  gap: 0.55rem;
+  max-width: 46rem;
+  margin-top: 2rem;
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
+  line-height: 1.5;
+}
+
+.plain-answers strong {
+  color: var(--primary);
+}
+
+.choice-block {
+  margin-top: clamp(2.2rem, 5vw, 3.6rem);
+}
+
+.choice-block > h2 {
+  margin-bottom: 1rem;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+.choice-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.choice-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  min-height: 12rem;
+  border: 2px solid var(--foreground);
+  border-radius: var(--radius);
+  background: var(--card);
+  padding: 1.25rem;
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.choice-card:hover,
+.choice-card:focus-visible {
+  background: var(--accent);
+  box-shadow: 0.35rem 0.35rem 0 var(--foreground);
+  transform: translate(-0.15rem, -0.15rem);
+}
+
+.choice-number {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.choice-card > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.choice-card strong {
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  line-height: 1.15;
+}
+
+.choice-card span span {
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.choice-card b {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: auto;
+  padding-top: 1.2rem;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.choice-card b svg,
+.plain-rule a svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.one-job {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(15rem, 0.7fr);
+  gap: clamp(2rem, 7vw, 6rem);
+  align-items: center;
+  padding: clamp(4rem, 8vw, 7rem) clamp(1rem, 10vw, 10rem);
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.one-job .plain-kicker,
+.plain-rule .plain-kicker {
+  color: var(--accent);
+}
+
+.one-job h2,
+.plain-steps h2,
+.plain-rule h2 {
+  max-width: 18ch;
+  font-size: clamp(2.4rem, 5vw, 4.8rem);
+  line-height: 1;
+}
+
+.one-job-lede {
+  max-width: 38rem;
+  margin-top: 1rem;
+  font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+}
+
+.job-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem 1.2rem;
+  margin-top: 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.job-facts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 750;
+}
+
+.job-facts svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--accent);
+}
+
+.plain-button {
+  margin-top: 1.7rem;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 800;
+}
+
+.plain-button:hover {
+  background: color-mix(in oklch, var(--accent) 88%, white);
+}
+
+.click-note {
+  margin-top: 0.7rem;
+  color: color-mix(in oklch, var(--background) 75%, transparent);
+  font-size: 0.86rem;
+}
+
+.demo-note {
+  border: 2px solid var(--accent);
+  padding: clamp(1.2rem, 3vw, 2rem);
+}
+
+.demo-note strong {
+  font-size: 1.2rem;
+}
+
+.demo-note p {
+  margin-top: 0.65rem;
+  color: color-mix(in oklch, var(--background) 82%, transparent);
+  font-size: 0.95rem;
+}
+
+.plain-steps {
+  display: grid;
+  max-width: 78rem;
+  margin-inline: auto;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(2rem, 8vw, 7rem);
+  padding: clamp(4rem, 8vw, 7rem) clamp(1rem, 5vw, 4rem);
+}
+
+.plain-steps > div > p:last-child {
+  max-width: 35rem;
+  margin-top: 1rem;
+  font-size: 1.05rem;
+}
+
+.plain-steps ol {
+  display: grid;
+  gap: 0;
+  padding: 0;
+}
+
+.plain-steps li {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  border-top: 2px solid var(--foreground);
+  padding: 1.2rem 0;
+  list-style: none;
+}
+
+.plain-steps li > span {
+  grid-row: 1 / 3;
+  color: var(--primary);
+  font-weight: 850;
+}
+
+.plain-steps li > strong {
+  font-size: 1.15rem;
+}
+
+.plain-steps li > p {
+  margin-top: 0.2rem;
+  color: var(--muted-foreground);
+}
+
+.plain-rule {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  align-items: end;
+  padding: clamp(3rem, 7vw, 6rem) clamp(1rem, 10vw, 10rem);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.plain-rule h2 {
+  max-width: 22ch;
+}
+
+.plain-rule a {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+/* Plain public pages: strong type, short lines and fewer dashboard cues. */
+.repair-title,
+.footer-title,
+.offer-form h4,
+.private-form legend,
+.admin-gate h1 {
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+.page-hero {
+  background: color-mix(in oklch, var(--background) 94%, var(--accent));
+}
+
+.page-hero.covenant-hero {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.page-hero.covenant-hero > p:last-child {
+  color: var(--background);
+}
+
+.page-hero h1 {
+  max-width: 18ch;
+  font-size: clamp(2.7rem, 6vw, 5.2rem);
+  font-weight: 850;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.page-hero > p:last-child {
+  max-width: 42rem;
+  color: var(--foreground);
+  font-size: clamp(1.05rem, 1.5vw, 1.2rem);
+  line-height: 1.55;
+}
+
+.section-heading h2,
+.principle-panel h2,
+.closing-callout h2,
+.founding-affirmation h2,
+.evidence-rule h2,
+.membership-rule h2,
+.prose-page h2,
+.admin-dashboard > section > h2,
+.ledger-card-title,
+.repair-title {
+  font-weight: 820;
+  line-height: 1.08;
+}
+
+.ledger-card-meta,
+.hero-ledger dt,
+.action-facts dt,
+.evidence-ledger dt,
+.timeline-list dt,
+.admin-record dt,
+.mini-label,
+.demo-label {
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  font-size: 0.84rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.demo-page-banner {
+  display: inline-flex;
+  border: 2px solid var(--foreground);
+  background: var(--accent);
+  padding: 0.45rem 0.65rem;
+  color: var(--accent-foreground);
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.page-help {
+  max-width: 44rem !important;
+  margin-top: 1.2rem !important;
+  border-left: 5px solid var(--primary);
+  padding-left: 0.9rem;
+  font-weight: 700;
+}
+
+.evidence-ledger {
+  display: block;
+  max-width: 72rem;
+}
+
+.evidence-ledger dl {
+  grid-template-columns: 1fr;
+}
+
+.evidence-ledger dl > div {
+  display: grid;
+  min-height: auto;
+  grid-template-columns: minmax(12rem, 17rem) minmax(0, 1fr);
+  gap: 1.4rem;
+  padding: 1rem 0;
+}
+
+.evidence-ledger dl > div:nth-child(odd) {
+  border-right: 0;
+}
+
+.evidence-ledger dl > div:nth-child(even),
+.evidence-ledger .safeguard-row {
+  padding-left: 0;
+}
+
+.evidence-ledger dd {
+  margin-top: 0;
+}
+
+.action-grid {
+  max-width: 62rem;
+  grid-template-columns: 1fr;
+}
+
+.job-skill,
+.demo-job-stop {
+  margin-top: 1rem;
+  line-height: 1.5;
+}
+
+.demo-job-stop {
+  border: 2px solid var(--foreground);
+  background: var(--accent);
+  padding: 0.8rem;
+  color: var(--accent-foreground);
+  font-weight: 800;
+}
+
+.job-more {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.9rem;
+}
+
+.job-more > summary {
+  cursor: pointer;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.boundary-grid {
+  max-width: 72rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.boundary-grid h2 {
+  margin-top: 1.1rem;
+}
+
+.boundary-grid p {
+  color: var(--foreground);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.form-section {
+  max-width: 70rem;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.private-form,
+.admin-outcome-form {
+  max-width: 58rem;
+}
+
 @media (max-width: 780px) {
   .site-header {
     min-height: 4rem;
   }
 
+  .site-header {
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+
+  .header-nav {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.55rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.7rem;
+    font-size: 0.82rem;
+  }
+
   .header-nav > a:not(.header-action) {
-    display: none;
+    display: inline-flex;
+  }
+
+  .header-action {
+    min-height: 2.2rem;
+    padding-inline: 0.7rem;
+    font-size: 0.82rem;
   }
 
   .hero-shell {
@@ -1620,18 +2084,49 @@
   .finish-queue {
     grid-template-columns: 1fr;
   }
+
+  .choice-cards,
+  .one-job,
+  .plain-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .choice-card {
+    min-height: 11rem;
+  }
+
+  .plain-rule {
+    display: grid;
+    align-items: start;
+  }
+
+  .evidence-ledger dl > div {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+  }
 }
 
 @media (max-width: 430px) {
   .wordmark > span:last-child {
-    max-width: 6.5rem;
+    max-width: none;
     line-height: 1.05;
   }
 
+  .header-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+    font-size: 0.95rem;
+  }
+
+  .header-nav a {
+    min-height: 2.75rem;
+    justify-content: center;
+  }
+
   .header-action {
-    min-height: 2.35rem;
-    padding-inline: 0.75rem;
-    font-size: 0.78rem;
+    min-height: 2.75rem;
+    font-size: 0.95rem;
   }
 
   .hero-shell {
@@ -1665,6 +2160,26 @@
 
   .steward-run-row {
     display: grid;
+  }
+
+  .plain-home {
+    padding-top: 2.5rem;
+  }
+
+  .plain-intro h1 {
+    font-size: clamp(2.7rem, 13vw, 3.7rem);
+  }
+
+  .plain-answers {
+    font-size: 1rem;
+  }
+
+  .choice-block {
+    margin-top: 2.5rem;
+  }
+
+  .choice-cards {
+    gap: 0.7rem;
   }
 }
 

@@ -5,9 +5,9 @@ import { SiteShell } from '@/components/site-shell';
 import { getPublicRepairs } from '@/db/queries';
 
 export const metadata: Metadata = {
-  title: 'Repairs',
+  title: "What we're fixing",
   description:
-    'Active and completed fairness repairs with scope, safeguards and review dates.',
+    'The unfair forms, rules and services people are trying to put right.',
 };
 export const dynamic = 'force-dynamic';
 
@@ -16,11 +16,11 @@ export default async function RepairsPage() {
   return (
     <SiteShell>
       <header className="page-hero compact-hero">
-        <p className="eyebrow">Public work ledger</p>
-        <h1>Repairs</h1>
+        <p className="eyebrow">The work</p>
+        <h1>What we&apos;re fixing</h1>
         <p>
-          Each repair has a bounded problem, named owners, a smallest useful
-          test, safeguards and a date when the work must be reconsidered.
+          Open one to see what is wrong, what people will try and who will check
+          the work. Made-up pages are marked in plain sight.
         </p>
       </header>
       <section

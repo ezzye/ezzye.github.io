@@ -66,6 +66,7 @@ export type Outcome = {
   repairId: string;
   repairSlug?: string;
   repairTitle?: string;
+  repairIsDemo?: boolean;
   title: string;
   activity: string;
   observedEffect: string;

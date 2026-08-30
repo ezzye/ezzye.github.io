@@ -82,7 +82,7 @@ export async function POST(request: Request) {
         maximum: 120,
       })!,
       problem: stringField(body.problem, 'problem', {
-        minimum: 100,
+        minimum: 30,
         maximum: 2_000,
       })!,
       broadLocation: stringField(body.broadLocation, 'broadLocation', {
@@ -90,16 +90,16 @@ export async function POST(request: Request) {
         maximum: 120,
       }),
       affectedGroups: stringField(body.affectedGroups, 'affectedGroups', {
-        minimum: 20,
+        minimum: 10,
         maximum: 800,
       })!,
       evidenceState: stringField(body.evidenceState, 'evidenceState', {
-        minimum: 20,
+        minimum: 10,
         maximum: 1_200,
       })!,
       sourceLinks: linksField(body.sourceLinks, 'sourceLinks'),
       desiredChange: stringField(body.desiredChange, 'desiredChange', {
-        minimum: 20,
+        minimum: 10,
         maximum: 1_000,
       })!,
       firstStep: stringField(body.firstStep, 'firstStep', {
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
         maximum: 800,
       })!,
       helpNeeded: stringField(body.helpNeeded, 'helpNeeded', {
-        minimum: 10,
+        minimum: 5,
         maximum: 500,
       })!,
       relationship,

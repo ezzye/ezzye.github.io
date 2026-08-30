@@ -5,21 +5,19 @@ import { Check, Scale, Shield, X } from 'lucide-react';
 import { SiteShell } from '@/components/site-shell';
 
 export const metadata: Metadata = {
-  title: 'Community covenant',
-  description:
-    'The beliefs, behaviours, evidence rules and appeal rights that protect the workshop.',
+  title: 'Our rules',
+  description: 'Be kind, stand for DEI, check facts and say no to pile-ons.',
 };
 
 export default function CovenantPage() {
   return (
     <SiteShell>
       <header className="page-hero covenant-hero">
-        <p className="eyebrow">Covenant · version 2026-08-30-v1</p>
-        <h1>A wall around the work, with a door for evidence.</h1>
+        <p className="eyebrow">Our rules</p>
+        <h1>Kind to people. Hard on unfair rules.</h1>
         <p>
-          Coding for Justice is not a neutral attention market. It is a
-          protected working community for people committed to dignity,
-          diversity, equity, inclusion and practical fairness.
+          You do not have to agree with every claim. You do have to stand for
+          DEI, treat people with care, check facts and say no to pile-ons.
         </p>
       </header>
 
@@ -27,90 +25,57 @@ export default function CovenantPage() {
         className="page-section founding-affirmation"
         aria-labelledby="affirmation-title"
       >
-        <p className="eyebrow">Our founding affirmation</p>
+        <p className="eyebrow">Why Jason Arday matters here</p>
         <h2 id="affirmation-title">
           Jason Arday was unable to speak as a child, defied the odds and became
           a Black Cambridge professor — deservedly so.
         </h2>
         <p>
-          This is our declared direction of travel: human possibility must not
-          be priced by an early label, class, race, disability or another
-          person’s estimate. It is a values test for joining the workshop, not
-          permission to suspend evidence, treat a living person as a mascot, or
-          demand agreement with every story ever told about him.
+          This tells you which way we face. A person&apos;s start in life must
+          not set their worth. Race, class or disability must not shut the door.
+        </p>
+        <p>
+          We still check facts. We do not use Jason Arday as a mascot or ask him
+          to speak for us.
         </p>
         <p className="source-note">
-          The factual core is supported by the University of Cambridge’s{' '}
+          Cambridge backs the main facts in its{' '}
           <a href="https://news.educ.cam.ac.uk/230223-jason-arday">
-            appointment announcement
+            news story
           </a>{' '}
           and{' '}
           <a href="https://faculty.educ.cam.ac.uk/people/staff/arday/">
-            faculty profile
+            staff page
           </a>
-          . “Deservedly so” is our explicit moral judgement.
+          . “Deservedly so” is what we believe.
         </p>
       </section>
 
-      <section
-        className="page-section covenant-columns"
-        aria-label="Covenant behaviours"
-      >
+      <section className="page-section covenant-columns" aria-label="Our rules">
         <article className="covenant-positive">
           <Check aria-hidden="true" />
-          <h2>Required</h2>
+          <h2>You must</h2>
           <ul>
-            <li>
-              Affirm DEI and the equal dignity of people across protected
-              characteristics.
-            </li>
-            <li>
-              Listen to affected people without requiring them to perform
-              trauma.
-            </li>
-            <li>
-              Separate known facts, reported experience, inference, disagreement
-              and uncertainty.
-            </li>
-            <li>Challenge systems and claims without humiliating people.</li>
-            <li>
-              Accept proportionate safeguards, review dates, corrections and
-              stop rules.
-            </li>
-            <li>
-              Share credit, respect access needs and make space for quiet
-              contribution.
-            </li>
+            <li>Stand for DEI and each person&apos;s worth.</li>
+            <li>Listen. Do not make people show their pain.</li>
+            <li>Say what you know and what you do not know.</li>
+            <li>Test a claim without shaming the person.</li>
+            <li>Fix the record when new facts come in.</li>
+            <li>Share praise and make room for quiet ways to help.</li>
           </ul>
         </article>
         <article className="covenant-negative">
           <X aria-hidden="true" />
-          <h2>Not welcome</h2>
+          <h2>You must not</h2>
           <ul>
+            <li>Bring hate based on who someone is.</li>
+            <li>Bully, gang up on, expose or set a crowd on someone.</li>
+            <li>Treat likes, fame, money or a job title as proof.</li>
             <li>
-              Racism, ableism, sexism, class contempt, homophobia, transphobia
-              or religious hatred.
+              Post private facts or names without a check and clear say-so.
             </li>
-            <li>
-              Media bullying, dog-piling, doxxing, harassment or mobilisation
-              against a person.
-            </li>
-            <li>
-              Using popularity, celebrity, wealth or institutional status as
-              proof.
-            </li>
-            <li>
-              Publishing private material, accusations or identifying details
-              without review and consent.
-            </li>
-            <li>
-              AI-generated verdicts, automated moderation decisions or
-              undisclosed synthetic testimony.
-            </li>
-            <li>
-              Hijacking a repair to recruit, advertise, fundraise or build a
-              personal following.
-            </li>
+            <li>Let AI decide who is right or who gets banned.</li>
+            <li>Use the work to sell, recruit or build a following.</li>
           </ul>
         </article>
       </section>
@@ -121,21 +86,19 @@ export default function CovenantPage() {
       >
         <Scale aria-hidden="true" />
         <div>
-          <p className="eyebrow">Belief without credulity</p>
-          <h2 id="evidence-rule-title">Fair people can investigate a claim.</h2>
+          <p className="eyebrow">When people disagree</p>
+          <h2 id="evidence-rule-title">
+            Ask for proof. Do not start a pile-on.
+          </h2>
           <p>
-            The covenant rejects automatic belief in media narratives as well as
-            automatic disbelief of marginalised people. A participant may ask
-            for a source, contest an inference or change their mind. The test is
-            how they do it: specific evidence, proportionate language, no
-            pile-on, a chance to respond, and a visible correction if the record
-            changes.
+            You do not have to swallow a news story whole. Ask for a source. Say
+            why you think a claim is wrong. Let others answer. Fix the page if
+            the facts change.
           </p>
           <p>
-            Intersectionality is a lens, not a membership label: we examine how
-            overlapping systems such as race, class, disability and gender can
-            compound a barrier, while still judging the evidence in the repair
-            at hand.
+            Race, class, sex and disability can all hit one person at once. Some
+            call this intersectionality. We look at how the harms stack up, and
+            we still check each claim.
           </p>
         </div>
       </section>
@@ -146,26 +109,24 @@ export default function CovenantPage() {
       >
         <Shield aria-hidden="true" />
         <div>
-          <h2 id="membership-title">
-            Participation is conditional on conduct.
-          </h2>
+          <h2 id="membership-title">Who can help</h2>
           <p>
-            Anyone may read the public ledger. Offering help or entering the
-            protected workshop requires this covenant. A boundary decision must
-            cite a rule, preserve privacy and be open to an independent appeal.
-            We do not exclude someone because of a protected characteristic.
+            Anyone can read. To help with the work, you must keep these rules.
           </p>
           <p>
-            The UK Equality Act protects people from discrimination and permits
-            proportionate positive action in defined circumstances. Read the{' '}
+            If we turn you down, we must say which rule we used. You may ask
+            someone else to check our choice. We never turn someone away because
+            of who they are.
+          </p>
+          <p className="source-note">
+            UK law also sets rules on unfair treatment. Read the{' '}
             <a href="https://www.gov.uk/discrimination-your-rights">
-              government overview
+              government guide
             </a>{' '}
-            and seek qualified advice before applying this policy as employment,
-            membership or service law.
+            and get legal help before using this page as a formal policy.
           </p>
           <Link className="repair-link" href="/appeal">
-            Request a correction or independent review
+            Ask us to check or fix a choice
           </Link>
         </div>
       </section>

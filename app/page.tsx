@@ -1,220 +1,168 @@
 import Link from 'next/link';
-import {
-  ArrowRight,
-  CalendarClock,
-  CheckCircle2,
-  CircleDot,
-  ShieldCheck,
-  Users,
-} from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 
-import { OutcomeCard } from '@/components/outcome-card';
-import { formatDate } from '@/components/repair-card';
 import { SiteShell } from '@/components/site-shell';
-import { RepairStageBadge } from '@/components/workshop-status';
 import { buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { getCurrentRepairBundle, getLatestOutcomes } from '@/db/queries';
+import { getCurrentRepairBundle } from '@/db/queries';
 import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-const process = [
-  [
-    'Listen',
-    'A private account arrives. We remove identifying detail and check immediate safety.',
-  ],
-  [
-    'Frame',
-    'Known facts, unknowns, affected groups, desired change and safeguards become visible.',
-  ],
-  [
-    'Act',
-    'A bounded task gets an owner, reviewer, time-box, output and stop condition.',
-  ],
-  [
-    'Check',
-    'We distinguish completed activity from an observed or independently verified effect.',
-  ],
-  [
-    'Publish',
-    'The outcome ledger records who benefited, what did not change and what we learned.',
-  ],
+const choices = [
+  {
+    number: '1',
+    title: 'I want to help',
+    body: 'See the kind of small job we will post. No real job is open yet.',
+    link: '/repairs/public-consultation#open-jobs',
+    action: 'See an example job',
+  },
+  {
+    number: '2',
+    title: 'I need help',
+    body: 'Tell us about a bad rule, form or service. What you send stays private.',
+    link: '/start',
+    action: 'Tell us what is wrong',
+  },
+  {
+    number: '3',
+    title: 'I want to look',
+    body: 'See what people tried, what worked and what did not.',
+    link: '/outcomes',
+    action: 'See what changed',
+  },
 ];
 
 export default async function Home() {
-  const [bundle, outcomes] = await Promise.all([
-    getCurrentRepairBundle(),
-    getLatestOutcomes(1),
-  ]);
+  const bundle = await getCurrentRepairBundle();
   const nextAction = bundle.actions.find(
     (action) => action.status === 'ready' || action.status === 'offered',
   );
 
   return (
     <SiteShell>
-      <section className="hero-shell">
-        <div className="hero-copy">
-          <p className="eyebrow">A fairness repair workshop</p>
-          <h1>Turn concern into repair.</h1>
-          <p className="hero-intro">
-            Bring one repeatable unfair process. We will frame a small test,
-            find the right people to help, and publish what actually happened.
-          </p>
-          <p className="hero-belief">
-            Built for dignity, equity and evidence — without outrage ranking,
-            pile-ons or automatic publication.
-          </p>
-          <div className="hero-actions">
-            <Link
-              className={cn(buttonVariants({ size: 'lg' }), 'primary-cta')}
-              href="/start"
-            >
-              Bring a barrier <ArrowRight aria-hidden="true" />
-            </Link>
-            <Link
-              className={cn(
-                buttonVariants({ size: 'lg', variant: 'outline' }),
-                'secondary-cta',
-              )}
-              href={`/repairs/${bundle.repair.slug}`}
-            >
-              See the work
-            </Link>
+      <section className="plain-home" aria-labelledby="home-title">
+        <div className="plain-intro">
+          <p className="plain-kicker">Start here</p>
+          <h1 id="home-title">Pick a small job. Help fix something unfair.</h1>
+          <div className="plain-answers">
+            <p>
+              <strong>What is this?</strong> A to-do list for fixing bad forms,
+              rules and services.
+            </p>
+            <p>
+              <strong>Why should I care?</strong> Bad forms and rules can shut
+              people out. You may know the problem or have a skill that helps.
+            </p>
+            <p>
+              <strong>What do I do?</strong> Pick one of the three boxes below.
+            </p>
           </div>
-          <p className="trust-line">
-            <span>Private intake</span> · <span>human review</span> ·{' '}
-            <span>public evidence</span> · <span>right of appeal</span>
-          </p>
         </div>
 
-        <Card className="current-repair">
-          <CardHeader>
-            <div className="repair-kicker">
-              <CircleDot aria-hidden="true" /> Current repair
-              {bundle.repair.isDemo && (
-                <span className="demo-label">Demonstration</span>
-              )}
-            </div>
-            <h2 className="repair-title">{bundle.repair.title}</h2>
-            <RepairStageBadge stage={bundle.repair.stage} />
-          </CardHeader>
-          <CardContent>
-            <p className="repair-description">{bundle.repair.summary}</p>
-            <dl className="repair-facts">
-              <div>
-                <dt>
-                  <CheckCircle2 aria-hidden="true" /> Smallest test
-                </dt>
-                <dd>{bundle.repair.smallestTest}</dd>
-              </div>
-              <div>
-                <dt>
-                  <Users aria-hidden="true" /> Useful contribution
-                </dt>
-                <dd>
-                  {nextAction?.title ?? 'No open task at this review point'}
-                </dd>
-              </div>
-              <div>
-                <dt>
-                  <CalendarClock aria-hidden="true" /> Next review
-                </dt>
-                <dd>{formatDate(bundle.repair.reviewDate)}</dd>
-              </div>
-            </dl>
-            <Link
-              className="repair-link"
-              href={`/repairs/${bundle.repair.slug}`}
-            >
-              See evidence, safeguards and actions{' '}
-              <ArrowRight aria-hidden="true" />
-            </Link>
-          </CardContent>
-        </Card>
+        <section className="choice-block" aria-labelledby="choice-title">
+          <h2 id="choice-title">What do you want to do?</h2>
+          <div className="choice-cards">
+            {choices.map((choice) => (
+              <Link
+                className="choice-card"
+                href={choice.link}
+                key={choice.title}
+              >
+                <span className="choice-number" aria-hidden="true">
+                  {choice.number}
+                </span>
+                <span>
+                  <strong>{choice.title}</strong>
+                  <span>{choice.body}</span>
+                  <b>
+                    {choice.action} <ArrowRight aria-hidden="true" />
+                  </b>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
       </section>
 
-      <section
-        className="page-section process-section"
-        aria-labelledby="process-title"
-      >
-        <div className="section-heading">
-          <p className="eyebrow">The operating system</p>
-          <h2 id="process-title">Hope is a process you can inspect.</h2>
-          <p>
-            We do not promise to fix the world. We make the next fair action
-            small, owned and checkable.
+      <section className="one-job" aria-labelledby="one-job-title">
+        <div>
+          <p className="plain-kicker">Made-up example</p>
+          <h2 id="one-job-title">Read one short guide</h2>
+          <p className="one-job-lede">
+            Read one page. Tell us what is hard to follow.
+          </p>
+          <ul className="job-facts" aria-label="Job facts">
+            <li>
+              <Check aria-hidden="true" /> 20 mins
+            </li>
+            <li>
+              <Check aria-hidden="true" /> At home
+            </li>
+            <li>
+              <Check aria-hidden="true" /> No expert skill needed
+            </li>
+          </ul>
+          <Link
+            className={cn(buttonVariants({ size: 'lg' }), 'plain-button')}
+            href={`/repairs/${bundle.repair.slug}#open-jobs`}
+          >
+            See how this job would work <ArrowRight aria-hidden="true" />
+          </Link>
+          <p className="click-note">
+            This is not a real job. You cannot sign up for it.
           </p>
         </div>
-        <ol className="process-grid">
-          {process.map(([title, body], index) => (
-            <li key={title}>
-              <span>{String(index + 1).padStart(2, '0')}</span>
-              <h3>{title}</h3>
-              <p>{body}</p>
-            </li>
-          ))}
+        <aside className="demo-note">
+          <strong>No real job is open yet.</strong>
+          <p>
+            It uses a made-up council letter. No real person or town is named.
+          </p>
+          {nextAction && (
+            <p>
+              A real job page would show its {nextAction.capacity} open places
+              here.
+            </p>
+          )}
+        </aside>
+      </section>
+
+      <section className="plain-steps" aria-labelledby="steps-title">
+        <div>
+          <p className="plain-kicker">How it works</p>
+          <h2 id="steps-title">Yes. It is a task list.</h2>
+          <p>
+            You offer to help with one job. We check it is safe and a good fit.
+            You do the job. We show what changed.
+          </p>
+        </div>
+        <ol>
+          <li>
+            <span>1</span>
+            <strong>Pick a job</strong>
+            <p>Know the time and the goal.</p>
+          </li>
+          <li>
+            <span>2</span>
+            <strong>Do the job</strong>
+            <p>Work alone or with one other person.</p>
+          </li>
+          <li>
+            <span>3</span>
+            <strong>We check it</strong>
+            <p>Then we say what changed.</p>
+          </li>
         </ol>
       </section>
 
-      <section
-        className="page-section principle-panel"
-        aria-labelledby="principle-title"
-      >
+      <section className="plain-rule" aria-labelledby="rule-title">
         <div>
-          <p className="eyebrow">A protected working culture</p>
-          <h2 id="principle-title">Warmth is part of the infrastructure.</h2>
+          <p className="plain-kicker">Our ground rule</p>
+          <h2 id="rule-title">
+            No bullies. No pile-ons. No one gets talked down to.
+          </h2>
         </div>
-        <div className="principle-copy">
-          <p>
-            Attention is not a prize here. It is a responsibility: greet the
-            person, understand the barrier, make room for difference, and
-            challenge a claim without humiliating its author.
-          </p>
-          <p>
-            Our founding affirmation is that Jason Arday was unable to speak as
-            a child, defied the odds and became a Black Cambridge professor —
-            deservedly so. It declares the direction of travel; the covenant
-            turns that belief into observable conduct.
-          </p>
-          <Link className="repair-link" href="/covenant">
-            Read the covenant and evidence rule{' '}
-            <ArrowRight aria-hidden="true" />
-          </Link>
-        </div>
-      </section>
-
-      {outcomes[0] && (
-        <section
-          className="page-section latest-outcome"
-          aria-labelledby="outcome-title"
-        >
-          <div className="section-heading">
-            <p className="eyebrow">Outcome, not applause</p>
-            <h2 id="outcome-title">What changed — and what did not.</h2>
-            <p>
-              Every public claim carries an evidence level and an explicit
-              limit.
-            </p>
-          </div>
-          <OutcomeCard outcome={outcomes[0]} />
-        </section>
-      )}
-
-      <section
-        className="page-section closing-callout"
-        aria-labelledby="closing-title"
-      >
-        <ShieldCheck aria-hidden="true" />
-        <div>
-          <h2 id="closing-title">Start with one repairable barrier.</h2>
-          <p>
-            No public accusation is required. You can send private background,
-            request a redacted draft, or simply inspect the demonstration first.
-          </p>
-        </div>
-        <Link className={buttonVariants({ size: 'lg' })} href="/start">
-          Start privately
+        <Link href="/covenant">
+          Read our rules <ArrowRight aria-hidden="true" />
         </Link>
       </section>
     </SiteShell>

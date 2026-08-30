@@ -10,7 +10,7 @@ export function RepairCard({ repair }: { repair: Repair }) {
     <Card className="ledger-card">
       <CardHeader>
         <div className="ledger-card-meta">
-          {repair.isDemo && <span className="demo-label">Demonstration</span>}
+          {repair.isDemo && <span className="demo-label">Made-up example</span>}
           <RepairStageBadge stage={repair.stage} />
         </div>
         <CardTitle className="ledger-card-title">{repair.title}</CardTitle>
@@ -18,11 +18,11 @@ export function RepairCard({ repair }: { repair: Repair }) {
       <CardContent>
         <p className="ledger-card-summary">{repair.summary}</p>
         <p className="review-date">
-          <CalendarClock aria-hidden="true" /> Review{' '}
+          <CalendarClock aria-hidden="true" /> Check again{' '}
           {formatDate(repair.reviewDate)}
         </p>
         <Link className="repair-link" href={`/repairs/${repair.slug}`}>
-          See evidence and actions <ArrowRight aria-hidden="true" />
+          See this work <ArrowRight aria-hidden="true" />
         </Link>
       </CardContent>
     </Card>
