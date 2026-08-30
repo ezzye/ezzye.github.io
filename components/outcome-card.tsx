@@ -1,8 +1,9 @@
 import Link from 'next/link';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ConfidenceBadge } from '@/components/workshop-status';
 import { formatDate } from '@/components/repair-card';
+import { OutcomePublicBody } from '@/components/outcome-public-body';
 import type { Outcome } from '@/lib/types';
 
 export function OutcomeCard({ outcome }: { outcome: Outcome }) {
@@ -17,21 +18,9 @@ export function OutcomeCard({ outcome }: { outcome: Outcome }) {
           )}
           <span>{formatDate(outcome.publishedAt)}</span>
         </div>
-        <CardTitle className="ledger-card-title">{outcome.title}</CardTitle>
       </CardHeader>
-      <CardContent className="outcome-content">
-        <div>
-          <p className="mini-label">What we did</p>
-          <p>{outcome.activity}</p>
-        </div>
-        <div>
-          <p className="mini-label">What changed</p>
-          <p>{outcome.observedEffect}</p>
-        </div>
-        <div className="outcome-limit">
-          <p className="mini-label">What did not change</p>
-          <p>{outcome.whatDidNotChange}</p>
-        </div>
+      <CardContent>
+        <OutcomePublicBody outcome={outcome} />
         {outcome.repairSlug && (
           <Link className="repair-link" href={`/repairs/${outcome.repairSlug}`}>
             See all the work behind this

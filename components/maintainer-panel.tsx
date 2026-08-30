@@ -348,13 +348,44 @@ function PublishRepairStep({
   repair: AdminRepair;
   action: ActionCard;
 }) {
+  const publicationGuard = repair.publicationGuard;
+  if (!publicationGuard) {
+    return (
+      <p className="admin-warning">
+        The exact preview could not be locked. Reload this page before
+        publishing.
+      </p>
+    );
+  }
   return (
     <>
-      <div className="maintainer-preview">
-        <p className="mini-label">Every public field — check each line</p>
+      <div
+        className="maintainer-preview"
+        data-publication-revision={publicationGuard.revision}
+        data-publication-snapshot={publicationGuard.snapshotHash}
+      >
+        <p className="mini-label">
+          Public words and behaviour — check each line
+        </p>
         <h3>{repair.title}</h3>
         <p>{repair.summary}</p>
         <dl className="maintainer-public-words">
+          <div>
+            <dt>Public address</dt>
+            <dd>/repairs/{repair.slug}</dd>
+          </div>
+          <div>
+            <dt>Repair reference</dt>
+            <dd>{repair.id}</dd>
+          </div>
+          <div>
+            <dt>Starting stage</dt>
+            <dd>acting</dd>
+          </div>
+          <div>
+            <dt>Made-up example?</dt>
+            <dd>{repair.isDemo ? 'yes' : 'no'}</dd>
+          </div>
           <div>
             <dt>Lead</dt>
             <dd>{repair.ownerName}</dd>
@@ -402,6 +433,22 @@ function PublishRepairStep({
           <div>
             <dt>Small job</dt>
             <dd>{action.title}</dd>
+          </div>
+          <div>
+            <dt>Job reference</dt>
+            <dd>{action.id}</dd>
+          </div>
+          <div>
+            <dt>Job belongs to</dt>
+            <dd>{action.repairId}</dd>
+          </div>
+          <div>
+            <dt>Job starts</dt>
+            <dd>stopped — nobody can volunteer yet</dd>
+          </div>
+          <div>
+            <dt>How people take part</dt>
+            <dd>offer — no reply form or questions</dd>
           </div>
           <div>
             <dt>What the job must make</dt>
@@ -463,6 +510,8 @@ function PublishRepairStep({
           noPrivateDetails: data.get('noPrivateDetails') === 'on',
           humanReviewed: data.get('humanReviewed') === 'on',
           covenantAligned: data.get('covenantAligned') === 'on',
+          expectedRevision: publicationGuard.revision,
+          expectedSnapshotHash: publicationGuard.snapshotHash,
         })}
       >
         <label className="maintainer-check">
@@ -602,6 +651,7 @@ function PublishedWorkflow({
 }) {
   const action = actions[0];
   const draft = currentUpdateDraft(updates);
+  const draftPublicationGuard = draft?.publicationGuard ?? null;
   const actionNeedsOpening =
     action?.status === 'stopped' &&
     repair.stage !== 'closed' &&
@@ -649,44 +699,56 @@ function PublishedWorkflow({
       ) : (
         <UpdateDraftForm repair={repair} draft={draft} />
       )}
-      {draft && (
-        <>
-          <div className="maintainer-preview">
-            <p className="mini-label">Exact public preview</p>
-            <h3>{draft.title}</h3>
-            <p>{draft.body}</p>
-            <p>
-              <strong>New proof:</strong> {draft.evidenceChanged}
-            </p>
-            <p>
-              <strong>Still unfair:</strong> {draft.remainsUnfair}
-            </p>
-            <p>
-              <strong>Next:</strong> {draft.nextOwner}, checked{' '}
-              {draft.nextReviewDate}.
-            </p>
-          </div>
-          <WorkshopForm
-            url={`/api/admin/updates/${draft.id}`}
-            method="PATCH"
-            button="Make this update visible"
-            buildBody={(data) => ({
-              operation: 'publish',
-              noPrivateDetails: data.get('noPrivateDetails') === 'on',
-              humanReviewed: data.get('humanReviewed') === 'on',
-            })}
-          >
-            <label className="maintainer-check">
-              <input type="checkbox" name="noPrivateDetails" />
-              The update contains no private case details.
-            </label>
-            <label className="maintainer-check">
-              <input type="checkbox" name="humanReviewed" />
-              A person checked every public word.
-            </label>
-          </WorkshopForm>
-        </>
-      )}
+      {draft &&
+        (draftPublicationGuard ? (
+          <>
+            <div
+              className="maintainer-preview"
+              data-publication-revision={draftPublicationGuard.revision}
+              data-publication-snapshot={draftPublicationGuard.snapshotHash}
+            >
+              <p className="mini-label">Exact public preview</p>
+              <h3>{draft.title}</h3>
+              <p>{draft.body}</p>
+              <p>
+                <strong>New proof:</strong> {draft.evidenceChanged}
+              </p>
+              <p>
+                <strong>Still unfair:</strong> {draft.remainsUnfair}
+              </p>
+              <p>
+                <strong>Next:</strong> {draft.nextOwner}, checked{' '}
+                {draft.nextReviewDate}.
+              </p>
+            </div>
+            <WorkshopForm
+              url={`/api/admin/updates/${draft.id}`}
+              method="PATCH"
+              button="Make this update visible"
+              buildBody={(data) => ({
+                operation: 'publish',
+                noPrivateDetails: data.get('noPrivateDetails') === 'on',
+                humanReviewed: data.get('humanReviewed') === 'on',
+                expectedRevision: draftPublicationGuard.revision,
+                expectedSnapshotHash: draftPublicationGuard.snapshotHash,
+              })}
+            >
+              <label className="maintainer-check">
+                <input type="checkbox" name="noPrivateDetails" />
+                The update contains no private case details.
+              </label>
+              <label className="maintainer-check">
+                <input type="checkbox" name="humanReviewed" />
+                A person checked every public word.
+              </label>
+            </WorkshopForm>
+          </>
+        ) : (
+          <p className="admin-warning">
+            The exact update preview could not be locked. Reload this page
+            before publishing.
+          </p>
+        ))}
       {!draft && actionNeedsOpening && (
         <details className="maintainer-secondary">
           <summary>Write an update instead</summary>

@@ -21,6 +21,13 @@ export type OutcomeConfidence =
   | 'observed'
   | 'independently_verified';
 
+export type OutcomeSourceMode = 'public_evidence_only' | 'consented_replies';
+
+export type PublicationGuard = {
+  revision: number;
+  snapshotHash: string;
+};
+
 export type Repair = {
   id: string;
   slug: string;
@@ -84,6 +91,8 @@ export type Outcome = {
   whoBenefited: string;
   whatDidNotChange: string;
   learning: string;
+  sourceMode: OutcomeSourceMode;
+  sourceReplyCount: number;
   publishedAt: string;
   sortOrder: number;
 };
@@ -116,16 +125,27 @@ export type RepairBundle = {
 
 export type AdminRepair = Repair & {
   isPublished: boolean;
+  publicationGuard: PublicationGuard | null;
 };
 
 export type AdminRepairUpdate = RepairUpdate & {
   isPublished: boolean;
+  publicationGuard: PublicationGuard | null;
+};
+
+export type AdminOutcome = Omit<Outcome, 'publishedAt'> & {
+  publishedAt: string | null;
+  isPublished: boolean;
+  selectedResponseIds: string[];
+  publicationGuard: PublicationGuard | null;
+  reviewedGuard: PublicationGuard | null;
+  consentCheckedAt: string | null;
 };
 
 export type AdminRepairBundle = {
   repair: AdminRepair;
   actions: ActionCard[];
-  outcomes: Outcome[];
+  outcomes: AdminOutcome[];
   updates: AdminRepairUpdate[];
 };
 
@@ -183,6 +203,14 @@ export type AdminRetentionEvent = {
   dueDate: string;
   recordsDeleted: number;
   completedAt: string;
+};
+
+export type AdminRetentionSweep = {
+  lastStartedAt: string | null;
+  lastCompletedAt: string | null;
+  lastRecordsDeleted: number;
+  runCount: number;
+  lastErrorAt: string | null;
 };
 
 export type AdminActionInvite = {

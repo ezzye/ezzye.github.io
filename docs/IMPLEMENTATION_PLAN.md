@@ -14,6 +14,10 @@
   workshop can hold one private repair draft, build one bounded first job, keep
   that job stopped when the repair is published, and hold one weekly update
   privately until a separate publish choice.
+- Done: a self-contained route rehearsal checks the exact owner workflow, and a
+  separate built-Worker rehearsal checks the scheduled deletion job against a
+  throw-away database. This is local proof, not proof that hosted scheduling is
+  running.
 - Done: full test replies carry a non-extendable deletion deadline. Overdue
   replies fail closed, the next site request tries to erase them, and the owner
   can stop the reply job and erase every full reply early. The retained deletion
@@ -88,7 +92,13 @@ The site succeeds when one partner-backed repair is adopted, deliberately change
 
 ## Data boundaries
 
-Public repair data is separate from private submissions. A proposal never becomes public automatically. Publishing requires a new, redacted public record and human approval.
+Public repair data is separate from private submissions. A proposal never
+becomes public automatically. Repairs, updates and results use an exact private
+preview and revision-bound human approval. In phase one, a public result must
+stand on a public HTTPS evidence page that can be opened without signing in.
+Private test replies cannot be selected, summarised or used as the source of a
+published result. Ending a private test and deleting its full replies is a
+separate job from writing any public result.
 
 The intake does not request addresses, credentials, identity numbers, case numbers or detailed medical, financial, immigration or legal records. Phase one accepts public source links but no uploads. Private data is stored in the managed database and deleted according to the published retention rule.
 
@@ -96,6 +106,8 @@ The intake does not request addresses, credentials, identity numbers, case numbe
 
 - Server-rendered React application using the OpenAI Sites runtime.
 - Managed D1 database for repairs, actions, outcomes and private intake records.
+- A 15-minute scheduled deletion check, with the same deletion check on page
+  requests as a backup and a content-free heartbeat visible to the owner.
 - Dispatch-owned ChatGPT sign-in for the protected review area.
 - Server-side validation, request-size limits, honeypots and rate limiting on public forms.
 - Human-readable URLs and server-rendered content for resilience and search.
@@ -169,5 +181,7 @@ Do not replace the fictional repair with a real one until all are true:
   draft are allowed. An update stays private until its own human-reviewed
   publish choice.
 - Every outcome states what changed, what did not and the confidence level.
+- Every phase-one outcome names its public evidence and never depends on a
+  private reply.
 - No engagement ranking, public comments or private-data exposure exists.
 - Build, keyboard, reflow, contrast, HTTPS, security-header and legacy-route checks pass before cutover.

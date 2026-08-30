@@ -44,16 +44,16 @@ show evidence, not praise or testimonials:
 - what we tested and when;
 - the five questions;
 - whether it was paid or unpaid;
-- how many replies could be used in a nameless public summary;
-- the results as small numbers, such as “4 of 5”;
-- what confused or worried people;
 - exactly what changed;
 - what did not change and why;
-- the limits: five friends or peers are not proof for everyone;
+- public before-and-after evidence, such as the checked page versions;
+- the limits: a small private page test is not proof for everyone;
 - who checked it and the next check date.
 
-Do not publish names, full answers, guesses about diagnosis or individual
-quotes. If too few people allow a public summary, say that plainly.
+Do not publish reply counts, themes, names, full answers, guesses about diagnosis
+or individual quotes. The private test may help the owner improve the page, but
+it is not the source of a public result. Any public Repair Receipt must use a
+public HTTPS evidence page that anyone can open without signing in.
 
 ## The first partner message
 

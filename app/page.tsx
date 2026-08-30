@@ -4,14 +4,20 @@ import { ArrowRight, Check } from 'lucide-react';
 
 import { SiteShell } from '@/components/site-shell';
 import { buttonVariants } from '@/components/ui/button';
-import { getHomeRepairBundle } from '@/db/queries';
+import {
+  getActionResponseRetentionSweep,
+  getHomeRepairBundle,
+} from '@/db/queries';
 import { pilotRuntimeIsReady, publicIntakeIsOpen } from '@/lib/public-intake';
 import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const bundle = await getHomeRepairBundle();
+  const [bundle, retentionSweep] = await Promise.all([
+    getHomeRepairBundle(),
+    getActionResponseRetentionSweep(),
+  ]);
   const publicIntakeOpen = publicIntakeIsOpen();
   const nextAction = bundle.actions.find(
     (action) =>
@@ -25,7 +31,7 @@ export default async function Home() {
     hasRealJob &&
     nextAction &&
     !nextAction.isPreview &&
-    pilotRuntimeIsReady(nextAction),
+    pilotRuntimeIsReady(nextAction, retentionSweep),
   );
   const jobLink =
     nextAction?.responsePath ?? `/repairs/${bundle.repair.slug}#open-jobs`;

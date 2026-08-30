@@ -23,9 +23,8 @@ export default function PrivacyPage() {
         <p className="eyebrow">Privacy</p>
         <h1>Private means private.</h1>
         <p>
-          Your full form answer does not go online. The home-page test can add
-          to a nameless total or short summary only if you tick a separate,
-          optional box. This site has no public accounts, comments, trackers or
+          Your full form answer does not go online and cannot be the source of a
+          public result. This site has no public accounts, comments, trackers or
           file uploads.
         </p>
       </header>
@@ -70,15 +69,14 @@ export default function PrivacyPage() {
         )}
         <h2>What may go online</h2>
         <p>
-          Nothing goes online by itself. A future problem form may make a draft
-          with names and private details removed only when the sender gives an
-          email and separately agrees to see that draft first.
+          Nothing goes online by itself. A future problem form will need its own
+          checked rules before any public draft can be made.
         </p>
         <p>
-          The home-page test is different. It asks for no contact details, so we
-          cannot show a draft back to one person. Its optional tick box allows
-          only nameless totals or a short nameless summary. It never allows an
-          individual quote.
+          The home-page test stays private. Its answers, totals, themes and
+          individual words cannot be used as the source of a public result. A
+          separate public result must stand on a public evidence page that
+          anyone can open without signing in.
         </p>
         <h2>AI and who else may handle the data</h2>
         <p>
@@ -106,8 +104,8 @@ export default function PrivacyPage() {
             <p>
               The owner also has one button to stop the test and erase every
               full answer early. The deletion log keeps only the number erased
-              and the dates, never the answers. A nameless result may be kept
-              only when the optional public-summary box was ticked.
+              and the dates, never the answers. Ending the private test and
+              writing any public result are separate jobs.
             </p>
           </>
         ) : (

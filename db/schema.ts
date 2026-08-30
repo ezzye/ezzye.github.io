@@ -1,6 +1,8 @@
+import { sql } from 'drizzle-orm';
 import {
   index,
   integer,
+  primaryKey,
   sqliteTable,
   text,
   uniqueIndex,
@@ -32,6 +34,8 @@ export const repairs = sqliteTable(
     isPublished: integer('is_published', { mode: 'boolean' })
       .notNull()
       .default(false),
+    publicationRevision: integer('publication_revision').notNull().default(1),
+    publishedSnapshotHash: text('published_snapshot_hash'),
   },
   (table) => [
     uniqueIndex('idx_repairs_slug').on(table.slug),
@@ -185,7 +189,20 @@ export const outcomes = sqliteTable(
     whoBenefited: text('who_benefited').notNull(),
     whatDidNotChange: text('what_did_not_change').notNull(),
     learning: text('learning').notNull(),
-    publishedAt: text('published_at').notNull(),
+    sourceMode: text('source_mode', {
+      enum: ['public_evidence_only', 'consented_replies'],
+    })
+      .notNull()
+      .default('public_evidence_only'),
+    sourceReplyCount: integer('source_reply_count').notNull().default(0),
+    publicationRevision: integer('publication_revision').notNull().default(1),
+    reviewedRevision: integer('reviewed_revision'),
+    reviewedSnapshotHash: text('reviewed_snapshot_hash'),
+    publishedSnapshotHash: text('published_snapshot_hash'),
+    consentCheckedAt: text('consent_checked_at'),
+    createdAt: text('created_at').notNull().default(''),
+    updatedAt: text('updated_at').notNull().default(''),
+    publishedAt: text('published_at'),
     isPublished: integer('is_published', { mode: 'boolean' })
       .notNull()
       .default(false),
@@ -194,6 +211,26 @@ export const outcomes = sqliteTable(
   (table) => [
     index('idx_outcomes_repair_sort').on(table.repairId, table.sortOrder),
     index('idx_outcomes_public_date').on(table.isPublished, table.publishedAt),
+    uniqueIndex('idx_outcomes_one_draft_per_repair')
+      .on(table.repairId)
+      .where(sql`${table.isPublished} = 0`),
+  ],
+);
+
+export const outcomeResponseSources = sqliteTable(
+  'outcome_response_sources',
+  {
+    outcomeId: text('outcome_id')
+      .notNull()
+      .references(() => outcomes.id, { onDelete: 'cascade' }),
+    responseId: text('response_id')
+      .notNull()
+      .references(() => actionResponses.id, { onDelete: 'cascade' }),
+    selectedAt: text('selected_at').notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.outcomeId, table.responseId] }),
+    index('idx_outcome_sources_response').on(table.responseId),
   ],
 );
 
@@ -214,6 +251,8 @@ export const repairUpdates = sqliteTable(
     isPublished: integer('is_published', { mode: 'boolean' })
       .notNull()
       .default(false),
+    publicationRevision: integer('publication_revision').notNull().default(1),
+    publishedSnapshotHash: text('published_snapshot_hash'),
   },
   (table) => [
     index('idx_updates_repair_date').on(table.repairId, table.publishedAt),
@@ -376,3 +415,12 @@ export const rateLimits = sqliteTable(
   },
   (table) => [index('idx_rate_limits_reset').on(table.resetAt)],
 );
+
+export const retentionSweeps = sqliteTable('retention_sweeps', {
+  id: text('id').primaryKey(),
+  lastStartedAt: text('last_started_at'),
+  lastCompletedAt: text('last_completed_at'),
+  lastRecordsDeleted: integer('last_records_deleted').notNull().default(0),
+  runCount: integer('run_count').notNull().default(0),
+  lastErrorAt: text('last_error_at'),
+});

@@ -28,7 +28,6 @@ export function ActionResponseForm({
 }) {
   const { state, submit } = usePrivateForm('/api/action-responses');
   const [consentPrivateUse, setConsentPrivateUse] = useState(false);
-  const [consentAnonymousSummary, setConsentAnonymousSummary] = useState(false);
   const [confirmedAdult, setConfirmedAdult] = useState(false);
 
   async function handleSubmit(
@@ -41,7 +40,6 @@ export function ActionResponseForm({
       inviteToken,
       answers: questions.map((_, index) => data.get(`answer${index + 1}`)),
       consentPrivateUse,
-      consentAnonymousSummary,
       confirmedAdult,
       companyWebsite: data.get('companyWebsite'),
     });
@@ -133,24 +131,10 @@ export function ActionResponseForm({
             Read how we use and delete your answers.
           </Link>
         </label>
-        <label
-          className="checkbox-line"
-          htmlFor={`response-summary-consent-${actionId}`}
-        >
-          <Checkbox
-            id={`response-summary-consent-${actionId}`}
-            checked={consentAnonymousSummary}
-            onCheckedChange={(value) =>
-              setConsentAnonymousSummary(Boolean(value))
-            }
-            disabled={Boolean(disabledReason)}
-          />
-          You may also publish nameless totals or a short nameless summary.
-          Optional.
-        </label>
         <FieldDescription>
           Do not add your name, diagnosis, case details or another person&apos;s
-          private story. We do not record your screen, voice or face.
+          private story. We do not record your screen, voice or face. Your
+          answers stay private and cannot be the source of a public result.
         </FieldDescription>
       </FieldGroup>
       <Button

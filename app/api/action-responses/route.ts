@@ -1,5 +1,6 @@
 import {
   createActionResponse,
+  getActionResponseRetentionSweep,
   getDirectActionTask,
   getPilotActionSettings,
   purgeDueActionResponses,
@@ -52,9 +53,10 @@ export async function POST(request: Request) {
         409,
       );
     }
-    const [task, settings] = await Promise.all([
+    const [task, settings, retentionSweep] = await Promise.all([
       getDirectActionTask(actionId),
       getPilotActionSettings(actionId),
+      getActionResponseRetentionSweep(),
     ]);
     const privacy = getPilotPrivacyConfiguration();
     const deleteAfter = privacy
@@ -66,7 +68,7 @@ export async function POST(request: Request) {
       !deleteAfter ||
       new Date(deleteAfter).getTime() <= Date.now() ||
       task.questions.length === 0 ||
-      !pilotRuntimeIsReady(settings)
+      !pilotRuntimeIsReady(settings, retentionSweep)
     ) {
       throw new RequestValidationError(
         'This job is not taking replies now.',
@@ -107,7 +109,7 @@ export async function POST(request: Request) {
       inviteTokenHash: await hashActionInviteToken(inviteToken),
       answers,
       consentPrivateUse: true,
-      consentAnonymousSummary: booleanField(body.consentAnonymousSummary),
+      consentAnonymousSummary: false,
       confirmedAdult: true,
       deleteAfter,
     });

@@ -36,6 +36,7 @@ function completeRepair(overrides: Partial<AdminRepair> = {}): AdminRepair {
     updatedAt: '2026-08-30T12:00:00.000Z',
     isDemo: false,
     isPublished: false,
+    publicationGuard: null,
     ...overrides,
   };
 }
@@ -115,6 +116,28 @@ void test('publish gate needs the complete private frame and first job', () => {
     false,
   );
   assert.equal(repairCanPublish(completeRepair(), []), false);
+  assert.equal(
+    repairCanPublish(completeRepair(), [
+      completeAction({ status: 'verified' }),
+    ]),
+    false,
+  );
+  assert.equal(
+    repairCanPublish(completeRepair(), [
+      completeAction({ repairId: 'another_repair' }),
+    ]),
+    false,
+  );
+  assert.equal(
+    repairCanPublish(completeRepair(), [
+      completeAction({ participationMode: 'direct_response' }),
+    ]),
+    false,
+  );
+  assert.equal(
+    repairCanPublish(completeRepair(), [completeAction(), completeAction()]),
+    false,
+  );
 });
 
 void test('published repairs do not re-enter the draft workflow', () => {
@@ -138,8 +161,8 @@ void test('finds only the private weekly update', () => {
     publishedAt: '2026-08-30T12:00:00.000Z',
   };
   const updates: AdminRepairUpdate[] = [
-    { ...base, id: 'public', isPublished: true },
-    { ...base, id: 'draft', isPublished: false },
+    { ...base, id: 'public', isPublished: true, publicationGuard: null },
+    { ...base, id: 'draft', isPublished: false, publicationGuard: null },
   ];
   assert.equal(currentUpdateDraft(updates)?.id, 'draft');
 });

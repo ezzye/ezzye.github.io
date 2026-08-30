@@ -7,7 +7,10 @@ import { OutcomeCard } from '@/components/outcome-card';
 import { formatDate } from '@/components/repair-card';
 import { SiteShell } from '@/components/site-shell';
 import { RepairStageBadge } from '@/components/workshop-status';
-import { getPublicRepairBundle } from '@/db/queries';
+import {
+  getActionResponseRetentionSweep,
+  getPublicRepairBundle,
+} from '@/db/queries';
 import { pilotRuntimeIsReady } from '@/lib/public-intake';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +29,10 @@ export async function generateMetadata({
 
 export default async function RepairPage({ params }: PageProps) {
   const { slug } = await params;
-  const bundle = await getPublicRepairBundle(slug);
+  const [bundle, retentionSweep] = await Promise.all([
+    getPublicRepairBundle(slug),
+    getActionResponseRetentionSweep(),
+  ]);
   if (!bundle) notFound();
   const { repair, actions, outcomes, updates } = bundle;
   const directResponseActions = actions.filter(
@@ -35,7 +41,7 @@ export default async function RepairPage({ params }: PageProps) {
   const directResponseReadiness = new Map(
     directResponseActions.map((action) => [
       action.id,
-      pilotRuntimeIsReady(action),
+      pilotRuntimeIsReady(action, retentionSweep),
     ]),
   );
   const hasDirectResponse = directResponseActions.length > 0;
@@ -172,7 +178,7 @@ export default async function RepairPage({ params }: PageProps) {
               : hasPreviewResponse
                 ? 'Answers are not being accepted. Check the wording and safeguards. Do not invite testers yet.'
                 : hasOpenDirectResponse
-                  ? 'Do this job on this page. We ask for no name or email. Full answers stay private. We only publish nameless totals or a short summary if you say yes.'
+                  ? 'Do this job on this page. We ask for no name or email. Full answers stay private and cannot be the source of a public result.'
                   : hasDirectResponse
                     ? 'Replies are off while the privacy, permission and exact wording checks are finished.'
                     : 'Saying “I can help” does not give you the job. We first check it is safe, clear and a good fit.'}

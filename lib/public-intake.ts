@@ -5,6 +5,8 @@ import {
   isValidPublicEmail,
   pilotApprovalSnapshotIsCurrent,
 } from '@/lib/pilot-rules';
+import { retentionHeartbeatIsRecent } from '@/lib/retention-health';
+import type { AdminRetentionSweep } from '@/lib/types';
 
 export type PilotPrivacyConfiguration = {
   contactEmail: string;
@@ -161,11 +163,16 @@ export function pilotTermsAreApproved(action: PilotApprovalTerms): boolean {
   );
 }
 
-export function pilotRuntimeIsReady(action: PilotApprovalTerms): boolean {
+export function pilotRuntimeIsReady(
+  action: PilotApprovalTerms,
+  retentionSweep: AdminRetentionSweep | null,
+  now = new Date(),
+): boolean {
   return (
     pilotPrivacyIsReady(action.reviewDate) &&
     pilotInvitesAreAuthorized() &&
     pilotTermsAreApproved(action) &&
-    !publicIntakeIsOpen()
+    !publicIntakeIsOpen() &&
+    retentionHeartbeatIsRecent(retentionSweep, now)
   );
 }

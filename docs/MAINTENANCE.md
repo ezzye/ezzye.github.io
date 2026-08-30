@@ -17,7 +17,8 @@ jobs.
 1. Open the home page. Is it clear what this is and what someone can do?
 2. Open the protected workshop. Do only the one next job it shows.
 3. Check that every form meant to be shut is still shut.
-4. If a test is open, check its closing date, reply capacity and deletion proof.
+4. If a test is open, check its closing date, reply capacity, deletion proof and
+   latest automatic-check time. Close invitations if that time is not recent.
 5. Check the recent Site errors. One real visitor problem becomes the next job.
 6. Leave one short Workshop Note only when something actually changed.
 
@@ -50,8 +51,8 @@ Stop after ten minutes unless the site is unsafe or losing data.
 ## If you are ill, away or fed up
 
 - Stop new invitations and public intake first.
-- Stop any direct-reply job and delete full replies as soon as the permitted
-  nameless result is ready.
+- Stop any direct-reply job, revoke open links and delete full replies promptly.
+  Any public result is a separate, public-evidence-only job.
 - Put one plain line on the current repair saying work is paused, if publishing
   that line is separately approved.
 - If nobody can watch private data within the promised reply time, return the
@@ -60,13 +61,13 @@ Stop after ten minutes unless the site is unsafe or losing data.
 
 ## Minimum people before real participation
 
-| Job | Main person | Backup |
-| --- | ----------- | ------ |
-| Keep the Site working | — | — |
-| Read private replies | — | — |
-| Check fairness and consent | — | — |
-| Answer privacy requests | — | — |
-| Approve rollback | — | — |
+| Job                        | Main person | Backup |
+| -------------------------- | ----------- | ------ |
+| Keep the Site working      | —           | —      |
+| Read private replies       | —           | —      |
+| Check fairness and consent | —           | —      |
+| Answer privacy requests    | —           | —      |
+| Approve rollback           | —           | —      |
 
 One person may hold more than one job for a tiny test, but every job needs a
 named backup or a clear rule that closes the relevant form.

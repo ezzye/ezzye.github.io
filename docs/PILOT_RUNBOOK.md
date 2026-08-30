@@ -116,22 +116,21 @@ when the page is bad.
 
 1. Stop replies before reading the results as a set.
 2. Use every privately usable reply to decide whether the page should change.
-3. Separately mark the replies that allow a nameless public summary. Never
-   reject a reply because that optional permission was declined.
-4. Prepare a private working note: what confused people, what changed and what
-   did not change. Do not publish it.
-5. Prepare a separate public Repair Receipt using only the permitted replies.
-   If too few people gave permission, say that without giving their answers.
-6. Publish that exact Repair Receipt only after the owner gives and records a
-   separate publication approval.
-7. Once the allowed nameless result is ready, use the protected workshop to
-   stop the reply job and delete all full replies immediately. The date in the
-   privacy notice is the latest permitted date, not a reason to keep replies.
-8. Check the content-free deletion proof. It stores only how many replies were
-   erased and when. Without a scheduled worker, physical deletion at the exact
-   wall-clock instant cannot be promised: overdue replies are hidden and the
-   next site request tries to erase them.
-9. Keep only the separately agreed nameless result.
+3. Prepare a private working note: what confused people, what changed and what
+   did not change. Do not publish it or copy answers into an AI tool.
+4. Stop the private job, revoke open links and delete every full reply. The
+   privacy-notice date is the latest permitted date, not a reason to keep them.
+5. Check the content-free deletion proof and the latest automatic-check time.
+   The worker checks every 15 minutes; page loads repeat the check as a backup.
+   Do not send real invitations until the deployed owner-only Site shows a
+   recent automatic-check time.
+6. If a public result is useful, make it as a separate job using only a public
+   HTTPS evidence page that anyone can open without signing in. Do not use a
+   reply, a private note or a personal story as its source.
+7. Read the exact public preview and open its evidence link. Check that the page
+   contains no private material, then record the review. Any saved word or link
+   change cancels that review.
+8. Use the separate publish step only after that public-evidence review.
 
 ## Future invitation words — not authorised yet
 
@@ -140,7 +139,7 @@ when the page is bad.
 > Would you give up to ten minutes to check it? We need an adult who did not
 > help build the site. This is a page test, not a test of you. We do not ask for
 > your name, diagnosis or personal story, and we do not record you. Full answers
-> stay private. A nameless summary is your choice.
+> stay private and will not be used as the source of a public result.
 >
 > It is [unpaid / pays £X]. You can stop, or write “skip” for any question. We
 > stand for diversity, equity and inclusion (DEI) and reject bullying and

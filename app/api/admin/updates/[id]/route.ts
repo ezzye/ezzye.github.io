@@ -7,6 +7,7 @@ import { pilotClosingDateIsAllowed } from '@/lib/pilot-rules';
 import {
   booleanField,
   errorResponse,
+  integerField,
   readJsonObject,
   RequestValidationError,
   stringField,
@@ -31,7 +32,30 @@ export async function PATCH(
           'Confirm both checks before making this update visible.',
         );
       }
-      if (!(await publishRepairUpdateDraft(id))) {
+      const expectedSnapshotHash = stringField(
+        body.expectedSnapshotHash,
+        'expectedSnapshotHash',
+        { maximum: 80 },
+      )!;
+      if (!/^v1:sha256:[0-9a-f]{64}$/.test(expectedSnapshotHash)) {
+        throw new RequestValidationError(
+          'Reload the exact public preview before publishing.',
+        );
+      }
+      const result = await publishRepairUpdateDraft(id, {
+        revision: integerField(body.expectedRevision, 'expectedRevision', {
+          minimum: 1,
+        }),
+        snapshotHash: expectedSnapshotHash,
+      });
+      if (result === 'stale') {
+        throw new RequestValidationError(
+          'The words changed in another tab. Reload this page and check them again.',
+          {},
+          409,
+        );
+      }
+      if (result === 'not_ready') {
         throw new RequestValidationError(
           'This private update draft was not found.',
           {},

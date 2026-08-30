@@ -10,6 +10,7 @@ import {
   getAdminActionResponses,
   getAdminWorkBundle,
   getAdminRetentionEvents,
+  getAdminRetentionSweep,
   getAdminProposals,
   getAdminStewardBriefs,
   purgeDueActionResponses,
@@ -24,6 +25,7 @@ import {
   pilotTermsAreApproved,
   publicIntakeIsOpen,
 } from '@/lib/public-intake';
+import { retentionHeartbeatState } from '@/lib/retention-health';
 
 export const metadata: Metadata = { title: 'Protected workshop' };
 export const dynamic = 'force-dynamic';
@@ -73,6 +75,7 @@ export default async function AdminPage() {
     actionResponses,
     actionInvites,
     retentionEvents,
+    retentionSweep,
   ] = await Promise.all([
     getAdminProposals(),
     getAdminAppeals(),
@@ -80,6 +83,7 @@ export default async function AdminPage() {
     getAdminActionResponses(bundle.repair.id),
     getAdminActionInvites(bundle.repair.id),
     getAdminRetentionEvents(),
+    getAdminRetentionSweep(),
   ]);
   const pilotAction = bundle.actions.find(
     (action) => action.participationMode === 'direct_response',
@@ -102,6 +106,9 @@ export default async function AdminPage() {
           actions={bundle.actions}
           actionResponses={actionResponses}
           retentionEvents={retentionEvents}
+          retentionSweep={retentionSweep}
+          retentionHeartbeatState={retentionHeartbeatState(retentionSweep)}
+          outcomes={bundle.outcomes}
           updates={bundle.updates}
           actionInvites={actionInvites}
           proposals={proposals}

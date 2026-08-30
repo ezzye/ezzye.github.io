@@ -10,6 +10,7 @@ import { pilotClosingDateIsAllowed } from '@/lib/pilot-rules';
 import {
   booleanField,
   errorResponse,
+  integerField,
   readJsonObject,
   RequestValidationError,
   stringField,
@@ -134,7 +135,30 @@ export async function PATCH(
           'Confirm all three checks before making this repair visible.',
         );
       }
-      if (!(await publishRepairDraft(id))) {
+      const expectedSnapshotHash = stringField(
+        body.expectedSnapshotHash,
+        'expectedSnapshotHash',
+        { maximum: 80 },
+      )!;
+      if (!/^v1:sha256:[0-9a-f]{64}$/.test(expectedSnapshotHash)) {
+        throw new RequestValidationError(
+          'Reload the exact public preview before publishing.',
+        );
+      }
+      const result = await publishRepairDraft(id, {
+        revision: integerField(body.expectedRevision, 'expectedRevision', {
+          minimum: 1,
+        }),
+        snapshotHash: expectedSnapshotHash,
+      });
+      if (result === 'stale') {
+        throw new RequestValidationError(
+          'The words changed in another tab. Reload this page and check them again.',
+          {},
+          409,
+        );
+      }
+      if (result === 'not_ready') {
         throw new RequestValidationError(
           'Finish the repair frame and its first bounded job before publishing.',
           {},

@@ -45,9 +45,25 @@ function assertOk(result, expectedStatus = 200) {
   assert.equal(result.json?.ok, true, result.text);
 }
 
+async function currentPublicationGuard() {
+  const admin = await request('/admin', { admin: true });
+  assert.equal(admin.response.status, 200, admin.text);
+  const matches = [
+    ...admin.text.matchAll(
+      /data-publication-revision="(\d+)" data-publication-snapshot="([^"]+)"/g,
+    ),
+  ];
+  assert.equal(matches.length, 1, 'expected one exact private preview');
+  return {
+    expectedRevision: Number(matches[0][1]),
+    expectedSnapshotHash: matches[0][2],
+  };
+}
+
 const unique = Date.now().toString(36);
 const repairTitle = `Throw-away repair ${unique}`;
 const updateTitle = `Throw-away update ${unique}`;
+const outcomeTitle = `Throw-away result ${unique}`;
 const repairReviewDate = futureDate(14);
 const nextReviewDate = futureDate(21);
 
@@ -102,7 +118,7 @@ const incompletePublish = await request(`/api/admin/repairs/${repairId}`, {
     covenantAligned: true,
   },
 });
-assert.equal(incompletePublish.response.status, 409, incompletePublish.text);
+assert.equal(incompletePublish.response.status, 400, incompletePublish.text);
 
 assertOk(
   await request(`/api/admin/repairs/${repairId}`, {
@@ -177,6 +193,17 @@ assertOk(
   }),
 );
 
+const privateStatusChange = await request(`/api/admin/actions/${actionId}`, {
+  method: 'PATCH',
+  admin: true,
+  body: { status: 'verified' },
+});
+assert.equal(
+  privateStatusChange.response.status,
+  409,
+  privateStatusChange.text,
+);
+
 assertOk(
   await request(`/api/admin/actions/${actionId}`, {
     method: 'PATCH',
@@ -200,8 +227,40 @@ assertOk(
 const hiddenRepair = await request(`/repairs/${repairSlug}`);
 assert.equal(hiddenRepair.response.status, 404, hiddenRepair.text);
 
+const oldRepairGuard = await currentPublicationGuard();
 assertOk(
-  await request(`/api/admin/repairs/${repairId}`, {
+  await request(`/api/admin/actions/${actionId}`, {
+    method: 'PATCH',
+    admin: true,
+    body: {
+      operation: 'draft-basics',
+      title: `Check the invented step ${unique}`,
+      intendedOutput:
+        'A short invented checklist with no names, case files or private facts.',
+      whyItMatters:
+        'The repair is not useful unless the revised step can be checked.',
+      timeSize: '20 minutes',
+      compensation: 'Unpaid rehearsal using invented data only.',
+    },
+  }),
+);
+const staleRepairPublish = await request(`/api/admin/repairs/${repairId}`, {
+  method: 'PATCH',
+  admin: true,
+  body: {
+    operation: 'publish-draft',
+    noPrivateDetails: true,
+    humanReviewed: true,
+    covenantAligned: true,
+    ...oldRepairGuard,
+  },
+});
+assert.equal(staleRepairPublish.response.status, 409, staleRepairPublish.text);
+assert.equal((await request(`/repairs/${repairSlug}`)).response.status, 404);
+const repairGuard = await currentPublicationGuard();
+
+const duplicateRepairPublication = await Promise.all([
+  request(`/api/admin/repairs/${repairId}`, {
     method: 'PATCH',
     admin: true,
     body: {
@@ -209,8 +268,26 @@ assertOk(
       noPrivateDetails: true,
       humanReviewed: true,
       covenantAligned: true,
+      ...repairGuard,
     },
   }),
+  request(`/api/admin/repairs/${repairId}`, {
+    method: 'PATCH',
+    admin: true,
+    body: {
+      operation: 'publish-draft',
+      noPrivateDetails: true,
+      humanReviewed: true,
+      covenantAligned: true,
+      ...repairGuard,
+    },
+  }),
+]);
+assert.deepEqual(
+  duplicateRepairPublication
+    .map((result) => result.response.status)
+    .sort((left, right) => left - right),
+  [200, 409],
 );
 
 const publicRepair = await request(`/repairs/${repairSlug}`);
@@ -259,6 +336,42 @@ assert.equal(secondUpdate.response.status, 409, secondUpdate.text);
 const hiddenUpdate = await request(`/repairs/${repairSlug}`);
 assert.doesNotMatch(hiddenUpdate.text, new RegExp(updateTitle));
 
+const oldUpdateGuard = await currentPublicationGuard();
+assertOk(
+  await request(`/api/admin/updates/${updateId}`, {
+    method: 'PATCH',
+    admin: true,
+    body: {
+      title: updateTitle,
+      body: 'The invented rehearsal reached its changed private update step.',
+      evidenceChanged:
+        'The real routes kept the invented repair private until publication.',
+      remainsUnfair:
+        'No real fairness problem was tested or repaired by this rehearsal.',
+      nextOwner: 'Rehearsal owner',
+      nextReviewDate,
+    },
+  }),
+);
+const staleUpdatePublish = await request(`/api/admin/updates/${updateId}`, {
+  method: 'PATCH',
+  admin: true,
+  body: {
+    operation: 'publish',
+    noPrivateDetails: true,
+    humanReviewed: true,
+    ...oldUpdateGuard,
+  },
+});
+assert.equal(staleUpdatePublish.response.status, 409, staleUpdatePublish.text);
+const afterStaleUpdate = await request(`/repairs/${repairSlug}`);
+assert.doesNotMatch(afterStaleUpdate.text, new RegExp(updateTitle));
+assert.match(
+  afterStaleUpdate.text,
+  new RegExp(displayedDate(repairReviewDate)),
+);
+const updateGuard = await currentPublicationGuard();
+
 assertOk(
   await request(`/api/admin/updates/${updateId}`, {
     method: 'PATCH',
@@ -267,6 +380,7 @@ assertOk(
       operation: 'publish',
       noPrivateDetails: true,
       humanReviewed: true,
+      ...updateGuard,
     },
   }),
 );
@@ -275,6 +389,136 @@ const publicUpdate = await request(`/repairs/${repairSlug}`);
 assert.equal(publicUpdate.response.status, 200, publicUpdate.text);
 assert.match(publicUpdate.text, new RegExp(updateTitle));
 assert.match(publicUpdate.text, new RegExp(displayedDate(nextReviewDate)));
+
+const createdOutcome = await request('/api/admin/outcomes', {
+  method: 'POST',
+  admin: true,
+  body: {
+    repairId,
+    title: outcomeTitle,
+    activity: 'We ran one invented and tightly bounded maintenance check.',
+    observedEffect:
+      'The private draft stayed hidden until its separate publication step.',
+    evidence:
+      'This rehearsal route and its invented public proof link record the method.',
+    evidenceUrl: 'https://example.org/invented-proof',
+    confidence: 'observed',
+    verifierName: 'Rehearsal checker',
+    whoBenefited: 'Only the invented reader in this maintenance rehearsal.',
+    whatDidNotChange: 'No real service, policy or fairness problem changed.',
+    learning:
+      'A private draft and a separate exact review make publishing safer.',
+    sourceMode: 'public_evidence_only',
+  },
+});
+assertOk(createdOutcome, 201);
+const outcomeId = createdOutcome.json.reference;
+assert.match(outcomeId, /^outcome_[0-9a-f-]+$/);
+assert.doesNotMatch(
+  (await request('/outcomes')).text,
+  new RegExp(outcomeTitle),
+);
+
+const outcomeGuardOne = await currentPublicationGuard();
+assertOk(
+  await request(`/api/admin/outcomes/${outcomeId}`, {
+    method: 'PATCH',
+    admin: true,
+    body: {
+      operation: 'review',
+      humanReviewed: true,
+      noPrivateDetails: true,
+      noPrivateRepliesUsed: true,
+      publicEvidenceOpened: true,
+      publicEvidenceContainsNoPrivateMaterial: true,
+      ...outcomeGuardOne,
+    },
+  }),
+);
+assertOk(
+  await request(`/api/admin/outcomes/${outcomeId}`, {
+    method: 'PATCH',
+    admin: true,
+    body: {
+      operation: 'save',
+      title: outcomeTitle,
+      activity: 'We ran one invented and tightly bounded maintenance check.',
+      observedEffect:
+        'The private draft stayed hidden until its separate publication step.',
+      evidence:
+        'This rehearsal route and its invented public proof link record the method.',
+      evidenceUrl: 'https://example.org/invented-proof',
+      confidence: 'observed',
+      verifierName: 'Rehearsal checker',
+      whoBenefited: 'Only the invented reader in this maintenance rehearsal.',
+      whatDidNotChange: 'No real service, policy or fairness problem changed.',
+      learning:
+        'A changed private draft must be checked again before it can go public.',
+      sourceMode: 'public_evidence_only',
+    },
+  }),
+);
+const staleOutcomePublish = await request(`/api/admin/outcomes/${outcomeId}`, {
+  method: 'PATCH',
+  admin: true,
+  body: {
+    operation: 'publish',
+    publishExactReviewedDraft: true,
+    eraseFullRepliesIfUsed: false,
+    ...outcomeGuardOne,
+  },
+});
+assert.equal(
+  staleOutcomePublish.response.status,
+  409,
+  staleOutcomePublish.text,
+);
+assert.doesNotMatch(
+  (await request('/outcomes')).text,
+  new RegExp(outcomeTitle),
+);
+
+const outcomeGuardTwo = await currentPublicationGuard();
+assertOk(
+  await request(`/api/admin/outcomes/${outcomeId}`, {
+    method: 'PATCH',
+    admin: true,
+    body: {
+      operation: 'review',
+      humanReviewed: true,
+      noPrivateDetails: true,
+      noPrivateRepliesUsed: true,
+      publicEvidenceOpened: true,
+      publicEvidenceContainsNoPrivateMaterial: true,
+      ...outcomeGuardTwo,
+    },
+  }),
+);
+assertOk(
+  await request(`/api/admin/outcomes/${outcomeId}`, {
+    method: 'PATCH',
+    admin: true,
+    body: {
+      operation: 'publish',
+      publishExactReviewedDraft: true,
+      eraseFullRepliesIfUsed: false,
+      ...outcomeGuardTwo,
+    },
+  }),
+);
+const publicOutcome = await request('/outcomes');
+assert.match(publicOutcome.text, new RegExp(outcomeTitle));
+assert.match(publicOutcome.text, /Rehearsal checker/);
+assert.match(publicOutcome.text, /Only the invented reader/);
+assert.match(publicOutcome.text, /Open the public proof/);
+assert.match(publicOutcome.text, /No private reply was used/);
+
+const scheduledCleanup = await request('/cdn-cgi/local/scheduled');
+assert.equal(scheduledCleanup.response.status, 200, scheduledCleanup.text);
+assert.equal(scheduledCleanup.text, 'ok');
+const adminAfterCleanup = await request('/admin', { admin: true });
+assert.equal(adminAfterCleanup.response.status, 200, adminAfterCleanup.text);
+assert.match(adminAfterCleanup.text, /Automatic deletion check working/);
 
 assertOk(
   await request(`/api/admin/repairs/${repairId}`, {
@@ -290,7 +534,8 @@ console.log(
     repairId,
     actionId,
     updateId,
+    outcomeId,
     repairSlug,
-    checks: 20,
+    checks: 43,
   }),
 );

@@ -1,5 +1,6 @@
 import {
   approvePilotActionTerms,
+  getActionResponseRetentionSweep,
   getPilotActionSettings,
   updateInitialActionDraftBasics,
   updateInitialActionDraftGuard,
@@ -208,7 +209,10 @@ export async function PATCH(
           409,
         );
       }
-      const settings = await getPilotActionSettings(id);
+      const [settings, retentionSweep] = await Promise.all([
+        getPilotActionSettings(id),
+        getActionResponseRetentionSweep(),
+      ]);
       if (!body.isPreview && !pilotPrivacyIsReady(settings?.reviewDate)) {
         throw new RequestValidationError(
           'Finish the full pilot privacy details and record the check before opening this test.',
@@ -230,9 +234,12 @@ export async function PATCH(
           409,
         );
       }
-      if (!body.isPreview && (!settings || !pilotRuntimeIsReady(settings))) {
+      if (
+        !body.isPreview &&
+        (!settings || !pilotRuntimeIsReady(settings, retentionSweep))
+      ) {
         throw new RequestValidationError(
-          'The test is not ready to open.',
+          'The test is not ready to open. The automatic deletion check must be recent.',
           {},
           409,
         );

@@ -65,6 +65,24 @@ export function booleanField(value: unknown): boolean {
   return value === true;
 }
 
+export function integerField(
+  value: unknown,
+  label: string,
+  options: { minimum?: number; maximum?: number } = {},
+): number {
+  if (!Number.isInteger(value)) {
+    throw new RequestValidationError(`${label} must be a whole number.`);
+  }
+  const result = value as number;
+  if (options.minimum !== undefined && result < options.minimum) {
+    throw new RequestValidationError(`${label} is too small.`);
+  }
+  if (options.maximum !== undefined && result > options.maximum) {
+    throw new RequestValidationError(`${label} is too large.`);
+  }
+  return result;
+}
+
 export function emailField(value: unknown, optional = false): string | null {
   const email = stringField(value, 'email', { maximum: 254, optional });
   if (!email) return null;

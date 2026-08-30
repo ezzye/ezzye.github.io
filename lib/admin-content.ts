@@ -95,7 +95,18 @@ export function repairCanPublish(
   repair: AdminRepair,
   actions: ActionCard[],
 ): boolean {
-  return repairDraftNextStep(repair, actions) === 'publish';
+  const action = actions[0];
+  return (
+    actions.length === 1 &&
+    Boolean(action) &&
+    action.repairId === repair.id &&
+    action.participationMode === 'offer' &&
+    action.status === 'stopped' &&
+    !action.isPreview &&
+    action.responsePath === null &&
+    action.responseQuestions.length === 0 &&
+    repairDraftNextStep(repair, actions) === 'publish'
+  );
 }
 
 export function currentUpdateDraft(

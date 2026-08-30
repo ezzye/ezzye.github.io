@@ -138,6 +138,8 @@ export const demoBundle: RepairBundle = {
         'We do not know if the guide would help more real people reply or change a real choice.',
       learning:
         'Doing a task is not the same as helping people. A real test needs real readers who say yes and a group that will use the result.',
+      sourceMode: 'public_evidence_only',
+      sourceReplyCount: 0,
       publishedAt: '2026-08-30T09:00:00.000Z',
       sortOrder: 1,
     },

@@ -1,4 +1,8 @@
-import { createActionInvites, getPilotActionSettings } from '@/db/queries';
+import {
+  createActionInvites,
+  getActionResponseRetentionSweep,
+  getPilotActionSettings,
+} from '@/db/queries';
 import { getAdminUser } from '@/lib/admin';
 import { pilotRuntimeIsReady } from '@/lib/public-intake';
 import {
@@ -17,10 +21,13 @@ export async function POST(request: Request) {
     const actionId = stringField(body.actionId, 'actionId', {
       maximum: 100,
     })!;
-    const settings = await getPilotActionSettings(actionId);
-    if (!settings || !pilotRuntimeIsReady(settings)) {
+    const [settings, retentionSweep] = await Promise.all([
+      getPilotActionSettings(actionId),
+      getActionResponseRetentionSweep(),
+    ]);
+    if (!settings || !pilotRuntimeIsReady(settings, retentionSweep)) {
       throw new RequestValidationError(
-        'No link was made. Finish the privacy and test decisions, approve the exact terms and keep the other forms closed.',
+        'No link was made. The automatic deletion check must be recent, and every privacy and test decision must be ready.',
         {},
         409,
       );

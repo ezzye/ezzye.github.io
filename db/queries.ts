@@ -2,6 +2,7 @@ import { env } from 'cloudflare:workers';
 
 import { demoBundle } from '@/lib/demo-data';
 import { repairCanPublish, slugFromTitle } from '@/lib/admin-content';
+import { publicEvidenceUrlIsSafe } from '@/lib/outcome-draft-input';
 import {
   createActionInviteToken,
   hashActionInviteToken,
@@ -21,21 +22,37 @@ import {
   getPilotPrivacyConfiguration,
   type PilotApprovalTerms,
 } from '@/lib/public-intake';
+import {
+  outcomeDraftPublicationSnapshot,
+  outcomePublishedSnapshot,
+  publicationSnapshotHash,
+  repairPublicationSnapshot,
+  repairUpdatePublicationSnapshot,
+} from '@/lib/publication-snapshot';
+import {
+  APPLY_PUBLISHED_UPDATE_TO_REPAIR_SQL,
+  PUBLISH_REPAIR_DRAFT_SQL,
+  PUBLISH_REPAIR_UPDATE_DRAFT_SQL,
+} from '@/lib/publication-sql';
 import type {
   ActionCard,
   ActionOfferInput,
   AdminActionInvite,
   AdminActionResponse,
   AdminAppeal,
+  AdminOutcome,
   AdminProposal,
   AdminRepair,
   AdminRepairBundle,
   AdminRepairUpdate,
   AdminRetentionEvent,
+  AdminRetentionSweep,
   AppealInput,
   Correction,
   Outcome,
   OutcomeConfidence,
+  OutcomeSourceMode,
+  PublicationGuard,
   ProposalInput,
   Repair,
   RepairBundle,
@@ -66,6 +83,8 @@ type RepairRow = {
 
 type AdminRepairRow = RepairRow & {
   is_published: number;
+  publication_revision: number;
+  published_snapshot_hash: string | null;
 };
 
 type ActionRow = {
@@ -110,8 +129,27 @@ type OutcomeRow = {
   who_benefited: string;
   what_did_not_change: string;
   learning: string;
+  source_mode: OutcomeSourceMode;
+  source_reply_count: number;
   published_at: string;
   sort_order: number;
+};
+
+type AdminOutcomeRow = Omit<OutcomeRow, 'published_at'> & {
+  published_at: string | null;
+  is_published: number;
+  source_mode: OutcomeSourceMode;
+  source_reply_count: number;
+  publication_revision: number;
+  reviewed_revision: number | null;
+  reviewed_snapshot_hash: string | null;
+  published_snapshot_hash: string | null;
+  consent_checked_at: string | null;
+};
+
+type OutcomeSourceRow = {
+  outcome_id: string;
+  response_id: string;
 };
 
 type UpdateRow = {
@@ -128,6 +166,8 @@ type UpdateRow = {
 
 type AdminUpdateRow = UpdateRow & {
   is_published: number;
+  publication_revision: number;
+  published_snapshot_hash: string | null;
 };
 
 type AdminActionResponseRow = {
@@ -151,6 +191,14 @@ type RetentionEventRow = {
   due_date: string;
   records_deleted: number;
   completed_at: string;
+};
+
+type RetentionSweepRow = {
+  last_started_at: string | null;
+  last_completed_at: string | null;
+  last_records_deleted: number;
+  run_count: number;
+  last_error_at: string | null;
 };
 
 type AdminActionInviteRow = {
@@ -220,8 +268,15 @@ function mapRepair(row: RepairRow): Repair {
   };
 }
 
-function mapAdminRepair(row: AdminRepairRow): AdminRepair {
-  return { ...mapRepair(row), isPublished: Boolean(row.is_published) };
+function mapAdminRepair(
+  row: AdminRepairRow,
+  publicationGuard: PublicationGuard | null,
+): AdminRepair {
+  return {
+    ...mapRepair(row),
+    isPublished: Boolean(row.is_published),
+    publicationGuard,
+  };
 }
 
 function mapAction(row: ActionRow): ActionCard {
@@ -272,9 +327,55 @@ function mapOutcome(row: OutcomeRow): Outcome {
     whoBenefited: row.who_benefited,
     whatDidNotChange: row.what_did_not_change,
     learning: row.learning,
+    sourceMode: row.source_mode,
+    sourceReplyCount: Number(row.source_reply_count),
     publishedAt: row.published_at,
     sortOrder: row.sort_order,
   };
+}
+
+async function mapAdminOutcome(
+  row: AdminOutcomeRow,
+  selectedResponseIds: string[],
+): Promise<AdminOutcome> {
+  const outcome: AdminOutcome = {
+    id: row.id,
+    repairId: row.repair_id,
+    title: row.title,
+    activity: row.activity,
+    observedEffect: row.observed_effect,
+    evidence: row.evidence,
+    evidenceUrl: row.evidence_url,
+    confidence: row.confidence,
+    verifierName: row.verifier_name,
+    whoBenefited: row.who_benefited,
+    whatDidNotChange: row.what_did_not_change,
+    learning: row.learning,
+    publishedAt: row.published_at,
+    sortOrder: row.sort_order,
+    isPublished: Boolean(row.is_published),
+    sourceMode: row.source_mode,
+    sourceReplyCount: Number(row.source_reply_count),
+    selectedResponseIds,
+    publicationGuard: null,
+    reviewedGuard:
+      row.reviewed_revision && row.reviewed_snapshot_hash
+        ? {
+            revision: row.reviewed_revision,
+            snapshotHash: row.reviewed_snapshot_hash,
+          }
+        : null,
+    consentCheckedAt: row.consent_checked_at,
+  };
+  if (!outcome.isPublished) {
+    outcome.publicationGuard = {
+      revision: row.publication_revision,
+      snapshotHash: await publicationSnapshotHash(
+        outcomeDraftPublicationSnapshot(outcome, selectedResponseIds),
+      ),
+    };
+  }
+  return outcome;
 }
 
 function mapUpdate(row: UpdateRow): RepairUpdate {
@@ -291,8 +392,21 @@ function mapUpdate(row: UpdateRow): RepairUpdate {
   };
 }
 
-function mapAdminUpdate(row: AdminUpdateRow): AdminRepairUpdate {
-  return { ...mapUpdate(row), isPublished: Boolean(row.is_published) };
+async function mapAdminUpdate(row: AdminUpdateRow): Promise<AdminRepairUpdate> {
+  const update: AdminRepairUpdate = {
+    ...mapUpdate(row),
+    isPublished: Boolean(row.is_published),
+    publicationGuard: null,
+  };
+  if (!update.isPublished) {
+    update.publicationGuard = {
+      revision: row.publication_revision,
+      snapshotHash: await publicationSnapshotHash(
+        repairUpdatePublicationSnapshot(update),
+      ),
+    };
+  }
+  return update;
 }
 
 function mapStewardBrief(row: StewardRow): StewardBrief {
@@ -341,6 +455,7 @@ export async function getPublicRepairBundle(
   slug: string,
 ): Promise<RepairBundle | null> {
   try {
+    await purgeDueActionResponses();
     const row = await env.DB.prepare(
       `SELECT id, slug, title, summary, stage, scope, affected_groups,
         known_facts, unknowns, disputed_claims, desired_change, smallest_test,
@@ -374,9 +489,11 @@ export async function getPublicRepairBundle(
       env.DB.prepare(
         `SELECT id, repair_id, title, activity, observed_effect, evidence,
           evidence_url, confidence, verifier_name, who_benefited,
-          what_did_not_change, learning, published_at, sort_order
+          what_did_not_change, learning, source_mode, source_reply_count,
+          published_at, sort_order
         FROM outcomes
         WHERE repair_id = ? AND is_published = 1
+          AND source_mode = 'public_evidence_only'
         ORDER BY sort_order, published_at DESC`,
       )
         .bind(row.id)
@@ -426,12 +543,26 @@ export async function getCurrentRepairBundle(): Promise<RepairBundle> {
 
 function demoAdminBundle(): AdminRepairBundle {
   return {
-    repair: { ...demoBundle.repair, isPublished: true },
+    repair: {
+      ...demoBundle.repair,
+      isPublished: true,
+      publicationGuard: null,
+    },
     actions: demoBundle.actions,
-    outcomes: demoBundle.outcomes,
+    outcomes: demoBundle.outcomes.map((outcome) => ({
+      ...outcome,
+      isPublished: true,
+      sourceMode: 'public_evidence_only' as const,
+      sourceReplyCount: 0,
+      selectedResponseIds: [],
+      publicationGuard: null,
+      reviewedGuard: null,
+      consentCheckedAt: null,
+    })),
     updates: demoBundle.updates.map((update) => ({
       ...update,
       isPublished: true,
+      publicationGuard: null,
     })),
   };
 }
@@ -443,14 +574,14 @@ export async function getAdminRepairBundle(
     `SELECT id, slug, title, summary, stage, scope, affected_groups,
       known_facts, unknowns, disputed_claims, desired_change, smallest_test,
       safeguards, owner_name, partner_name, review_date, updated_at, is_demo,
-      is_published
+      is_published, publication_revision, published_snapshot_hash
      FROM repairs WHERE id = ? AND is_demo = 0`,
   )
     .bind(repairId)
     .first<AdminRepairRow>();
   if (!row) return null;
 
-  const [actions, outcomeRows, updateRows] = await Promise.all([
+  const [actions, outcomeRows, outcomeSources, updateRows] = await Promise.all([
     env.DB.prepare(
       `SELECT id, repair_id, title, intended_output, why_it_matters,
         time_size, compensation, participation_mode, response_questions,
@@ -465,25 +596,57 @@ export async function getAdminRepairBundle(
     env.DB.prepare(
       `SELECT id, repair_id, title, activity, observed_effect, evidence,
         evidence_url, confidence, verifier_name, who_benefited,
-        what_did_not_change, learning, published_at, sort_order
+        what_did_not_change, learning, source_mode, source_reply_count,
+        publication_revision, reviewed_revision, reviewed_snapshot_hash,
+        published_snapshot_hash, consent_checked_at, published_at,
+        is_published, sort_order
        FROM outcomes WHERE repair_id = ? ORDER BY sort_order, published_at DESC`,
     )
       .bind(row.id)
-      .all<OutcomeRow>(),
+      .all<AdminOutcomeRow>(),
+    env.DB.prepare(
+      `SELECT outcome_id, response_id FROM outcome_response_sources
+       WHERE outcome_id IN (SELECT id FROM outcomes WHERE repair_id = ?)
+       ORDER BY response_id`,
+    )
+      .bind(row.id)
+      .all<OutcomeSourceRow>(),
     env.DB.prepare(
       `SELECT id, repair_id, title, body, evidence_changed, remains_unfair,
-        next_owner, next_review_date, published_at, is_published
+        next_owner, next_review_date, published_at, is_published,
+        publication_revision, published_snapshot_hash
        FROM repair_updates WHERE repair_id = ? ORDER BY published_at DESC`,
     )
       .bind(row.id)
       .all<AdminUpdateRow>(),
   ]);
 
+  const mappedActions = actions.results.map(mapAction);
+  const repairGuard =
+    !row.is_published && mappedActions.length === 1
+      ? {
+          revision: row.publication_revision,
+          snapshotHash: await publicationSnapshotHash(
+            repairPublicationSnapshot(mapRepair(row), mappedActions[0]),
+          ),
+        }
+      : null;
+  const sourceIdsByOutcome = new Map<string, string[]>();
+  for (const source of outcomeSources.results) {
+    const ids = sourceIdsByOutcome.get(source.outcome_id) ?? [];
+    ids.push(source.response_id);
+    sourceIdsByOutcome.set(source.outcome_id, ids);
+  }
+
   return {
-    repair: mapAdminRepair(row),
-    actions: actions.results.map(mapAction),
-    outcomes: outcomeRows.results.map(mapOutcome),
-    updates: updateRows.results.map(mapAdminUpdate),
+    repair: mapAdminRepair(row, repairGuard),
+    actions: mappedActions,
+    outcomes: await Promise.all(
+      outcomeRows.results.map((outcome) =>
+        mapAdminOutcome(outcome, sourceIdsByOutcome.get(outcome.id) ?? []),
+      ),
+    ),
+    updates: await Promise.all(updateRows.results.map(mapAdminUpdate)),
   };
 }
 
@@ -558,10 +721,12 @@ export async function getLatestOutcomes(limit = 20): Promise<Outcome[]> {
         r.is_demo AS repair_is_demo,
         o.title, o.activity, o.observed_effect, o.evidence, o.evidence_url,
         o.confidence, o.verifier_name, o.who_benefited,
-        o.what_did_not_change, o.learning, o.published_at, o.sort_order
+        o.what_did_not_change, o.learning, o.source_mode,
+        o.source_reply_count, o.published_at, o.sort_order
       FROM outcomes o
       JOIN repairs r ON r.id = o.repair_id
       WHERE o.is_published = 1 AND r.is_published = 1
+        AND o.source_mode = 'public_evidence_only'
       ORDER BY o.published_at DESC LIMIT ?`,
     )
       .bind(limit)
@@ -1165,8 +1330,19 @@ function mapRetentionEvent(row: RetentionEventRow): AdminRetentionEvent {
   };
 }
 
+function mapRetentionSweep(row: RetentionSweepRow): AdminRetentionSweep {
+  return {
+    lastStartedAt: row.last_started_at,
+    lastCompletedAt: row.last_completed_at,
+    lastRecordsDeleted: Number(row.last_records_deleted),
+    runCount: Number(row.run_count),
+    lastErrorAt: row.last_error_at,
+  };
+}
+
 export async function purgeDueActionResponses(
   now = new Date(),
+  database: D1Database = env.DB,
 ): Promise<AdminRetentionEvent | null> {
   const completedAt = now.toISOString();
   const privacy = getPilotPrivacyConfiguration();
@@ -1177,9 +1353,10 @@ export async function purgeDueActionResponses(
     policyCutoff && Date.parse(policyCutoff) <= now.getTime(),
   );
   const id = `retention_${crypto.randomUUID()}`;
-  const results = await env.DB.batch([
-    env.DB.prepare(
-      `INSERT INTO retention_events (
+  const results = await database.batch([
+    database
+      .prepare(
+        `INSERT INTO retention_events (
         id, data_type, trigger, due_date, records_deleted, completed_at
       )
       SELECT ?1, 'action_responses', 'automatic',
@@ -1187,28 +1364,100 @@ export async function purgeDueActionResponses(
       FROM action_responses
       WHERE ${DUE_ACTION_RESPONSE_PREDICATE.replaceAll('?1', '?3').replaceAll('?2', '?4')}
       HAVING COUNT(*) > 0`,
-    ).bind(id, policyIsDue ? policyCutoff : null, completedAt, policyCutoff),
-    env.DB.prepare(STOP_DUE_RESPONSE_ACTIONS_SQL).bind(
-      completedAt,
-      policyCutoff,
-    ),
-    env.DB.prepare(REVOKE_DUE_RESPONSE_INVITES_SQL).bind(
-      completedAt,
-      policyCutoff,
-    ),
-    env.DB.prepare(DELETE_DUE_ACTION_RESPONSES_SQL).bind(
-      completedAt,
-      policyCutoff,
-    ),
+      )
+      .bind(id, policyIsDue ? policyCutoff : null, completedAt, policyCutoff),
+    database
+      .prepare(STOP_DUE_RESPONSE_ACTIONS_SQL)
+      .bind(completedAt, policyCutoff),
+    database
+      .prepare(REVOKE_DUE_RESPONSE_INVITES_SQL)
+      .bind(completedAt, policyCutoff),
+    database
+      .prepare(DELETE_DUE_ACTION_RESPONSES_SQL)
+      .bind(completedAt, policyCutoff),
   ]);
   if (Number(results[0]?.meta.changes ?? 0) !== 1) return null;
-  const event = await env.DB.prepare(
-    `SELECT id, data_type, trigger, due_date, records_deleted, completed_at
+  const event = await database
+    .prepare(
+      `SELECT id, data_type, trigger, due_date, records_deleted, completed_at
      FROM retention_events WHERE id = ?`,
-  )
+    )
     .bind(id)
     .first<RetentionEventRow>();
   return event ? mapRetentionEvent(event) : null;
+}
+
+export async function runScheduledActionResponseRetention(
+  database: D1Database,
+  now = new Date(),
+): Promise<AdminRetentionSweep> {
+  const startedAt = now.toISOString();
+  try {
+    const event = await purgeDueActionResponses(now, database);
+    const completedAt = new Date().toISOString();
+    const deleted = event?.recordsDeleted ?? 0;
+    await database
+      .prepare(
+        `INSERT INTO retention_sweeps (
+           id, last_started_at, last_completed_at, last_records_deleted,
+           run_count, last_error_at
+         ) VALUES ('action_responses', ?, ?, ?, 1, NULL)
+         ON CONFLICT(id) DO UPDATE SET
+           last_started_at = excluded.last_started_at,
+           last_completed_at = excluded.last_completed_at,
+           last_records_deleted = excluded.last_records_deleted,
+           run_count = retention_sweeps.run_count + 1,
+           last_error_at = NULL`,
+      )
+      .bind(startedAt, completedAt, deleted)
+      .run();
+    const row = await database
+      .prepare(
+        `SELECT last_started_at, last_completed_at, last_records_deleted,
+           run_count, last_error_at
+         FROM retention_sweeps WHERE id = 'action_responses'`,
+      )
+      .first<RetentionSweepRow>();
+    if (!row) throw new Error('Retention sweep heartbeat was not stored.');
+    return mapRetentionSweep(row);
+  } catch (error) {
+    const failedAt = new Date().toISOString();
+    try {
+      await database
+        .prepare(
+          `INSERT INTO retention_sweeps (
+             id, last_started_at, last_completed_at, last_records_deleted,
+             run_count, last_error_at
+           ) VALUES ('action_responses', ?, NULL, 0, 1, ?)
+           ON CONFLICT(id) DO UPDATE SET
+             last_started_at = excluded.last_started_at,
+             run_count = retention_sweeps.run_count + 1,
+             last_error_at = excluded.last_error_at`,
+        )
+        .bind(startedAt, failedAt)
+        .run();
+    } catch {
+      // A missing or stale heartbeat also fails closed if D1 cannot store the error.
+    }
+    throw error;
+  }
+}
+
+export async function getActionResponseRetentionSweep(
+  database: D1Database = env.DB,
+): Promise<AdminRetentionSweep | null> {
+  const row = await database
+    .prepare(
+      `SELECT last_started_at, last_completed_at, last_records_deleted,
+       run_count, last_error_at
+     FROM retention_sweeps WHERE id = 'action_responses'`,
+    )
+    .first<RetentionSweepRow>();
+  return row ? mapRetentionSweep(row) : null;
+}
+
+export async function getAdminRetentionSweep(): Promise<AdminRetentionSweep | null> {
+  return getActionResponseRetentionSweep();
 }
 
 export async function stopAndDeletePilotResponses(
@@ -1348,7 +1597,7 @@ export async function updateActionResponseStatus(
       row.action_id,
     )
     .run();
-  if (Number(updated.meta.changes ?? 0) !== 1) return false;
+  if (Number(updated.meta.changes ?? 0) < 1) return false;
 
   if (status === 'rejected' && row.response_status !== 'rejected') {
     await env.DB.prepare(
@@ -1393,7 +1642,7 @@ export async function deleteActionResponse(id: string): Promise<boolean> {
   )
     .bind(id)
     .run();
-  if (Number(deleted.meta.changes ?? 0) !== 1) return false;
+  if (Number(deleted.meta.changes ?? 0) < 1) return false;
 
   if (row.status !== 'rejected') {
     await env.DB.prepare(
@@ -1603,7 +1852,7 @@ export async function updateRepairDraftProblem(
       id,
     )
     .run();
-  return Number(result.meta.changes ?? 0) === 1;
+  return Number(result.meta.changes ?? 0) > 0;
 }
 
 export async function updateRepairDraftChange(
@@ -1616,7 +1865,7 @@ export async function updateRepairDraftChange(
   )
     .bind(input.desiredChange, input.smallestTest, new Date().toISOString(), id)
     .run();
-  return Number(result.meta.changes ?? 0) === 1;
+  return Number(result.meta.changes ?? 0) > 0;
 }
 
 export async function updateRepairDraftGuard(
@@ -1642,7 +1891,7 @@ export async function updateRepairDraftGuard(
       id,
     )
     .run();
-  return Number(result.meta.changes ?? 0) === 1;
+  return Number(result.meta.changes ?? 0) > 0;
 }
 
 export async function createInitialActionDraft(
@@ -1668,7 +1917,7 @@ export async function createInitialActionDraft(
   )
     .bind(id, repairId)
     .run();
-  return Number(result.meta.changes ?? 0) === 1 ? id : null;
+  return Number(result.meta.changes ?? 0) > 0 ? id : null;
 }
 
 export async function updateInitialActionDraftBasics(
@@ -1698,7 +1947,7 @@ export async function updateInitialActionDraftBasics(
       id,
     )
     .run();
-  return Number(result.meta.changes ?? 0) === 1;
+  return Number(result.meta.changes ?? 0) > 0;
 }
 
 export async function updateInitialActionDraftGuard(
@@ -1740,29 +1989,44 @@ export async function updateInitialActionDraftGuard(
       input.reviewDate,
     )
     .run();
-  return Number(result.meta.changes ?? 0) === 1;
+  return Number(result.meta.changes ?? 0) > 0;
 }
 
-export async function publishRepairDraft(id: string): Promise<boolean> {
+export async function publishRepairDraft(
+  id: string,
+  expected: PublicationGuard,
+): Promise<'published' | 'stale' | 'not_ready'> {
   const bundle = await getAdminRepairBundle(id);
   const action = bundle?.actions[0];
   if (
     !bundle ||
     !action ||
+    bundle.actions.length !== 1 ||
     !repairCanPublish(bundle.repair, bundle.actions) ||
     !pilotClosingDateIsAllowed(bundle.repair.reviewDate) ||
     !pilotClosingDateIsAllowed(action.reviewDate) ||
     action.reviewDate > bundle.repair.reviewDate
   ) {
-    return false;
+    return 'not_ready';
   }
-  const result = await env.DB.prepare(
-    `UPDATE repairs SET is_published = 1, stage = 'acting', updated_at = ?
-     WHERE id = ? AND is_demo = 0 AND is_published = 0`,
-  )
-    .bind(new Date().toISOString(), id)
+  const current = bundle.repair.publicationGuard;
+  if (
+    !current ||
+    current.revision !== expected.revision ||
+    current.snapshotHash !== expected.snapshotHash
+  ) {
+    return 'stale';
+  }
+  const result = await env.DB.prepare(PUBLISH_REPAIR_DRAFT_SQL)
+    .bind(
+      new Date().toISOString(),
+      current.snapshotHash,
+      id,
+      current.revision,
+      action.id,
+    )
     .run();
-  return Number(result.meta.changes ?? 0) === 1;
+  return Number(result.meta.changes ?? 0) === 1 ? 'published' : 'stale';
 }
 
 export async function createRepairUpdateDraft(input: {
@@ -1832,33 +2096,54 @@ export async function updateRepairUpdateDraft(
       id,
     )
     .run();
-  return Number(result.meta.changes ?? 0) === 1;
+  return Number(result.meta.changes ?? 0) > 0;
 }
 
-export async function publishRepairUpdateDraft(id: string): Promise<boolean> {
+export async function publishRepairUpdateDraft(
+  id: string,
+  expected: PublicationGuard,
+): Promise<'published' | 'stale' | 'not_ready'> {
   const row = await env.DB.prepare(
-    `SELECT repair_id, next_review_date FROM repair_updates
+    `SELECT id, repair_id, title, body, evidence_changed, remains_unfair,
+       next_owner, next_review_date, published_at, is_published,
+       publication_revision, published_snapshot_hash
+     FROM repair_updates
      WHERE id = ? AND is_published = 0`,
   )
     .bind(id)
-    .first<{ repair_id: string; next_review_date: string }>();
-  if (!row) return false;
-  if (!pilotClosingDateIsAllowed(row.next_review_date)) return false;
+    .first<AdminUpdateRow>();
+  if (!row || !pilotClosingDateIsAllowed(row.next_review_date)) {
+    return 'not_ready';
+  }
+  const draft = await mapAdminUpdate(row);
+  const current = draft.publicationGuard;
+  if (
+    !current ||
+    current.revision !== expected.revision ||
+    current.snapshotHash !== expected.snapshotHash
+  ) {
+    return 'stale';
+  }
   const now = new Date().toISOString();
   const results = await env.DB.batch([
-    env.DB.prepare(
-      `UPDATE repair_updates SET is_published = 1, published_at = ?
-       WHERE id = ? AND is_published = 0`,
-    ).bind(now, id),
-    env.DB.prepare(
-      `UPDATE repairs SET review_date = ?, updated_at = ?
-       WHERE id = ? AND is_published = 1 AND is_demo = 0`,
-    ).bind(row.next_review_date, now, row.repair_id),
+    env.DB.prepare(PUBLISH_REPAIR_UPDATE_DRAFT_SQL).bind(
+      now,
+      current.snapshotHash,
+      id,
+      current.revision,
+    ),
+    env.DB.prepare(APPLY_PUBLISHED_UPDATE_TO_REPAIR_SQL).bind(
+      row.next_review_date,
+      now,
+      id,
+      current.revision,
+      current.snapshotHash,
+    ),
   ]);
-  return (
-    Number(results[0]?.meta.changes ?? 0) === 1 &&
+  return Number(results[0]?.meta.changes ?? 0) === 1 &&
     Number(results[1]?.meta.changes ?? 0) === 1
-  );
+    ? 'published'
+    : 'stale';
 }
 
 export async function updateRepairStage(
@@ -1908,6 +2193,9 @@ export async function updateActionStatus(
   const result = await env.DB.prepare(
     `UPDATE action_cards SET status = ?
      WHERE id = ? AND participation_mode != 'direct_response'
+       AND repair_id IN (
+         SELECT id FROM repairs WHERE is_published = 1 AND is_demo = 0
+       )
        AND (
          ? NOT IN ('ready', 'offered')
          OR (
@@ -1922,10 +2210,10 @@ export async function updateActionStatus(
   )
     .bind(status, id, status)
     .run();
-  return Number(result.meta.changes ?? 0) === 1;
+  return Number(result.meta.changes ?? 0) > 0;
 }
 
-export async function publishOutcome(input: {
+type OutcomeDraftInput = {
   repairId: string;
   title: string;
   activity: string;
@@ -1937,18 +2225,75 @@ export async function publishOutcome(input: {
   whoBenefited: string;
   whatDidNotChange: string;
   learning: string;
-}): Promise<string> {
+  sourceMode: OutcomeSourceMode;
+};
+
+export type OutcomePublicationResult =
+  | 'saved'
+  | 'published'
+  | 'stale'
+  | 'not_ready'
+  | 'not_found';
+
+async function getOutcomeDraftById(id: string): Promise<AdminOutcome | null> {
+  const row = await env.DB.prepare(
+    `SELECT id, repair_id, title, activity, observed_effect, evidence,
+      evidence_url, confidence, verifier_name, who_benefited,
+      what_did_not_change, learning, source_mode, source_reply_count,
+      publication_revision, reviewed_revision, reviewed_snapshot_hash,
+      published_snapshot_hash, consent_checked_at, published_at,
+      is_published, sort_order
+     FROM outcomes WHERE id = ? AND is_published = 0`,
+  )
+    .bind(id)
+    .first<AdminOutcomeRow>();
+  if (!row) return null;
+  const sources = await env.DB.prepare(
+    `SELECT outcome_id, response_id FROM outcome_response_sources
+     WHERE outcome_id = ? ORDER BY response_id`,
+  )
+    .bind(id)
+    .all<OutcomeSourceRow>();
+  return mapAdminOutcome(
+    row,
+    sources.results.map((source) => source.response_id),
+  );
+}
+
+function publicEvidenceUrlIsValid(value: string | null): boolean {
+  return publicEvidenceUrlIsSafe(value);
+}
+
+function outcomeSourcesAreReady(outcome: AdminOutcome): boolean {
+  return (
+    outcome.sourceMode === 'public_evidence_only' &&
+    outcome.selectedResponseIds.length === 0 &&
+    publicEvidenceUrlIsValid(outcome.evidenceUrl)
+  );
+}
+
+export async function createOutcomeDraft(
+  input: OutcomeDraftInput,
+): Promise<string | null> {
   const id = `outcome_${crypto.randomUUID()}`;
-  await env.DB.prepare(
+  const now = new Date().toISOString();
+  const result = await env.DB.prepare(
     `INSERT INTO outcomes (
       id, repair_id, title, activity, observed_effect, evidence, evidence_url,
       confidence, verifier_name, who_benefited, what_did_not_change, learning,
-      published_at, is_published, sort_order
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 999)`,
+      source_mode, source_reply_count, created_at, updated_at, published_at,
+      is_published, sort_order
+    )
+    SELECT ?, r.id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, NULL, 0, 999
+    FROM repairs r
+    WHERE r.id = ? AND r.is_demo = 0 AND r.is_published = 1
+      AND NOT EXISTS (
+        SELECT 1 FROM outcomes o
+        WHERE o.repair_id = r.id AND o.is_published = 0
+      )`,
   )
     .bind(
       id,
-      input.repairId,
       input.title,
       input.activity,
       input.observedEffect,
@@ -1959,10 +2304,182 @@ export async function publishOutcome(input: {
       input.whoBenefited,
       input.whatDidNotChange,
       input.learning,
-      new Date().toISOString(),
+      input.sourceMode,
+      now,
+      now,
+      input.repairId,
     )
     .run();
-  return id;
+  return Number(result.meta.changes ?? 0) === 1 ? id : null;
+}
+
+export async function updateOutcomeDraft(
+  id: string,
+  input: Omit<OutcomeDraftInput, 'repairId'>,
+): Promise<boolean> {
+  const results = await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE outcomes
+         SET title = ?, activity = ?, observed_effect = ?, evidence = ?,
+           evidence_url = ?, confidence = ?, verifier_name = ?,
+           who_benefited = ?, what_did_not_change = ?, learning = ?,
+           source_mode = ?, updated_at = ?
+         WHERE id = ? AND is_published = 0
+           AND repair_id IN (
+             SELECT id FROM repairs WHERE is_demo = 0 AND is_published = 1
+           )`,
+    ).bind(
+      input.title,
+      input.activity,
+      input.observedEffect,
+      input.evidence,
+      input.evidenceUrl,
+      input.confidence,
+      input.verifierName,
+      input.whoBenefited,
+      input.whatDidNotChange,
+      input.learning,
+      input.sourceMode,
+      new Date().toISOString(),
+      id,
+    ),
+    env.DB.prepare(
+      `DELETE FROM outcome_response_sources
+       WHERE changes() >= 1 AND outcome_id = ? AND EXISTS (
+         SELECT 1 FROM outcomes
+         WHERE id = ? AND is_published = 0
+           AND source_mode = 'public_evidence_only'
+       )`,
+    ).bind(id, id),
+  ]);
+  return Number(results[0]?.meta.changes ?? 0) > 0;
+}
+
+export async function reviewOutcomeDraft(
+  id: string,
+  expected: PublicationGuard,
+  sourceCheck: {
+    noPrivateRepliesUsed: boolean;
+    publicEvidenceOpened: boolean;
+    publicEvidenceContainsNoPrivateMaterial: boolean;
+  },
+): Promise<OutcomePublicationResult> {
+  await purgeDueActionResponses();
+  const outcome = await getOutcomeDraftById(id);
+  if (!outcome) return 'not_found';
+  const current = outcome.publicationGuard;
+  if (
+    !current ||
+    current.revision !== expected.revision ||
+    current.snapshotHash !== expected.snapshotHash
+  ) {
+    return 'stale';
+  }
+  if (
+    outcome.sourceMode !== 'public_evidence_only' ||
+    !sourceCheck.noPrivateRepliesUsed ||
+    !sourceCheck.publicEvidenceOpened ||
+    !sourceCheck.publicEvidenceContainsNoPrivateMaterial
+  ) {
+    return 'not_ready';
+  }
+  const now = new Date();
+  if (!outcomeSourcesAreReady(outcome)) return 'not_ready';
+  const updated = await env.DB.prepare(
+    `UPDATE outcomes
+     SET reviewed_revision = ?, reviewed_snapshot_hash = ?,
+       consent_checked_at = ?, updated_at = ?
+     WHERE id = ? AND is_published = 0 AND publication_revision = ?`,
+  )
+    .bind(
+      current.revision,
+      current.snapshotHash,
+      now.toISOString(),
+      now.toISOString(),
+      id,
+      current.revision,
+    )
+    .run();
+  return Number(updated.meta.changes ?? 0) === 1 ? 'saved' : 'stale';
+}
+
+export async function publishReviewedOutcomeDraft(
+  id: string,
+  expected: PublicationGuard,
+): Promise<OutcomePublicationResult> {
+  await purgeDueActionResponses();
+  const outcome = await getOutcomeDraftById(id);
+  if (!outcome) return 'not_found';
+  const current = outcome.publicationGuard;
+  const reviewed = outcome.reviewedGuard;
+  if (
+    !current ||
+    current.revision !== expected.revision ||
+    current.snapshotHash !== expected.snapshotHash ||
+    !reviewed ||
+    reviewed.revision !== current.revision ||
+    reviewed.snapshotHash !== current.snapshotHash ||
+    !outcome.consentCheckedAt
+  ) {
+    return 'stale';
+  }
+  const now = new Date();
+  if (outcome.sourceMode !== 'public_evidence_only') {
+    return 'not_ready';
+  }
+  if (!outcomeSourcesAreReady(outcome)) return 'not_ready';
+  const publishedAt = now.toISOString();
+  const sourceCount = outcome.selectedResponseIds.length;
+  const publishedHash = await publicationSnapshotHash(
+    outcomePublishedSnapshot(outcome, sourceCount),
+  );
+  const publicationNonce = `publishing:${crypto.randomUUID()}`;
+
+  const results = await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE outcomes
+         SET is_published = 1, published_at = ?, source_reply_count = 0,
+           published_snapshot_hash = ?, reviewed_snapshot_hash = ?,
+           updated_at = ?
+         WHERE id = ? AND is_published = 0
+           AND source_mode = 'public_evidence_only'
+           AND publication_revision = ? AND reviewed_revision = ?
+           AND reviewed_snapshot_hash = ?
+           AND NOT EXISTS (
+             SELECT 1 FROM outcome_response_sources WHERE outcome_id = ?
+           )
+           AND EXISTS (
+             SELECT 1 FROM repairs r
+             WHERE r.id = outcomes.repair_id
+               AND r.is_published = 1 AND r.is_demo = 0
+           )`,
+    ).bind(
+      publishedAt,
+      publishedHash,
+      publicationNonce,
+      publishedAt,
+      id,
+      current.revision,
+      current.revision,
+      current.snapshotHash,
+      id,
+    ),
+    env.DB.prepare(
+      `UPDATE outcomes SET reviewed_snapshot_hash = NULL
+         WHERE id = ? AND is_published = 1
+           AND reviewed_snapshot_hash = ?`,
+    ).bind(id, publicationNonce),
+  ]);
+  return Number(results[0]?.meta.changes ?? 0) === 1 ? 'published' : 'stale';
+}
+
+export async function discardOutcomeDraft(id: string): Promise<boolean> {
+  const result = await env.DB.prepare(
+    `DELETE FROM outcomes WHERE id = ? AND is_published = 0`,
+  )
+    .bind(id)
+    .run();
+  return Number(result.meta.changes ?? 0) === 1;
 }
 
 export async function countRecentStewardBriefs(

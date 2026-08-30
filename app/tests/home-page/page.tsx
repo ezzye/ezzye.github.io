@@ -3,7 +3,11 @@ import { notFound } from 'next/navigation';
 
 import { ActionResponseForm } from '@/components/action-response-form';
 import { SiteShell } from '@/components/site-shell';
-import { getActionInviteState, getPublicRepairBundle } from '@/db/queries';
+import {
+  getActionInviteState,
+  getActionResponseRetentionSweep,
+  getPublicRepairBundle,
+} from '@/db/queries';
 import {
   actionInviteTokenLooksValid,
   hashActionInviteToken,
@@ -23,7 +27,10 @@ export default async function HomePageTest({
 }: {
   searchParams: Promise<{ invite?: string | string[] }>;
 }) {
-  const bundle = await getPublicRepairBundle('read-the-home-page');
+  const [bundle, retentionSweep] = await Promise.all([
+    getPublicRepairBundle('read-the-home-page'),
+    getActionResponseRetentionSweep(),
+  ]);
   const action = bundle?.actions.find(
     (item) =>
       item.participationMode === 'direct_response' &&
@@ -34,7 +41,7 @@ export default async function HomePageTest({
   const params = await searchParams;
   const inviteToken =
     typeof params.invite === 'string' ? params.invite.trim() : '';
-  const runtimeReady = pilotRuntimeIsReady(action);
+  const runtimeReady = pilotRuntimeIsReady(action, retentionSweep);
   const inviteState =
     runtimeReady &&
     !action.isPreview &&
@@ -97,8 +104,8 @@ export default async function HomePageTest({
             <li>No screen, voice or face recording</li>
           </ul>
           <p>
-            Full answers stay private. Nameless public totals or a short
-            nameless summary are a separate choice.
+            Full answers stay private and cannot be the source of a public
+            result.
           </p>
         </aside>
         <ActionResponseForm

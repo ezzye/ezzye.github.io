@@ -6,6 +6,7 @@ import { useState, type SyntheticEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MaintainerPanel } from '@/components/maintainer-panel';
+import { OutcomePublicBody } from '@/components/outcome-public-body';
 import {
   NativeSelect,
   NativeSelectOption,
@@ -16,13 +17,16 @@ import type {
   AdminActionInvite,
   AdminActionResponse,
   AdminAppeal,
+  AdminOutcome,
   AdminProposal,
   AdminRepair,
   AdminRepairUpdate,
   AdminRetentionEvent,
+  AdminRetentionSweep,
   Repair,
   StewardBrief,
 } from '@/lib/types';
+import type { RetentionHeartbeatState } from '@/lib/retention-health';
 import type {
   PilotInviteAuthorization,
   PilotPrivacyConfiguration,
@@ -235,6 +239,7 @@ function PilotControls({
   pilotInvitesAuthorized,
   pilotTermsApproved,
   publicIntakeOpen,
+  retentionHeartbeatState,
 }: {
   actions: ActionCard[];
   invites: AdminActionInvite[];
@@ -245,6 +250,7 @@ function PilotControls({
   pilotInvitesAuthorized: boolean;
   pilotTermsApproved: boolean;
   publicIntakeOpen: boolean;
+  retentionHeartbeatState: RetentionHeartbeatState;
 }) {
   const router = useRouter();
   const action = actions.find(
@@ -271,6 +277,7 @@ function PilotControls({
     pilotPrivacyReady &&
     pilotInvitesAuthorized &&
     pilotTermsApproved &&
+    retentionHeartbeatState === 'recent' &&
     settingsMatchAction &&
     !publicIntakeOpen,
   );
@@ -571,6 +578,18 @@ function PilotControls({
         <li data-ready={activeInviteCount > 0}>
           Unused one-use links: {activeInviteCount}
         </li>
+        <li data-ready={retentionHeartbeatState === 'recent'}>
+          Automatic deletion check:{' '}
+          {retentionHeartbeatState === 'recent'
+            ? 'working'
+            : retentionHeartbeatState === 'failed'
+              ? 'failed — links and replies are off'
+              : retentionHeartbeatState === 'stale'
+                ? 'late — links and replies are off'
+                : retentionHeartbeatState === 'invalid'
+                  ? 'time is invalid — links and replies are off'
+                  : 'not proved — links and replies are off'}
+        </li>
         <li data-ready={action.isPreview || pilotRuntimeReady}>
           Replies:{' '}
           {action.isPreview
@@ -725,23 +744,37 @@ function AppealEditor({ appeal }: { appeal: AdminAppeal }) {
   );
 }
 
-function OutcomePublisher({ repairId }: { repairId: string }) {
+function OutcomePublisher({
+  repairId,
+  outcomes,
+}: {
+  repairId: string;
+  outcomes: AdminOutcome[];
+}) {
   const router = useRouter();
   const [state, setState] = useState<MutationState>(idleState);
+  const draft = outcomes.find((outcome) => !outcome.isPublished) ?? null;
 
-  async function submit(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
+  function fields(form: HTMLFormElement) {
+    return Object.fromEntries(new FormData(form).entries());
+  }
+
+  async function save(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault();
-    setState({ kind: 'sending', message: 'Publishing…' });
+    setState({ kind: 'sending', message: 'Saving private draft…' });
     try {
       const form = event.currentTarget;
-      await sendMutation('/api/admin/outcomes', 'POST', {
-        ...Object.fromEntries(new FormData(form).entries()),
-        repairId,
-      });
-      form.reset();
+      await sendMutation(
+        draft ? `/api/admin/outcomes/${draft.id}` : '/api/admin/outcomes',
+        draft ? 'PATCH' : 'POST',
+        {
+          ...fields(form),
+          ...(draft ? { operation: 'save' } : { repairId }),
+        },
+      );
       setState({
         kind: 'success',
-        message: 'Outcome published to the public ledger.',
+        message: 'Private draft saved. Nothing was published.',
       });
       router.refresh();
     } catch (error) {
@@ -752,122 +785,298 @@ function OutcomePublisher({ repairId }: { repairId: string }) {
     }
   }
 
+  async function review(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
+    event.preventDefault();
+    if (!draft?.publicationGuard) return;
+    setState({ kind: 'sending', message: 'Saving exact review…' });
+    try {
+      const data = new FormData(event.currentTarget);
+      await sendMutation(`/api/admin/outcomes/${draft.id}`, 'PATCH', {
+        operation: 'review',
+        expectedRevision: draft.publicationGuard.revision,
+        expectedSnapshotHash: draft.publicationGuard.snapshotHash,
+        humanReviewed: data.get('humanReviewed') === 'on',
+        noPrivateDetails: data.get('noPrivateDetails') === 'on',
+        noPrivateRepliesUsed: data.get('noPrivateRepliesUsed') === 'on',
+        publicEvidenceOpened: data.get('publicEvidenceOpened') === 'on',
+        publicEvidenceContainsNoPrivateMaterial:
+          data.get('publicEvidenceContainsNoPrivateMaterial') === 'on',
+      });
+      setState({
+        kind: 'success',
+        message: 'Exact words and sources reviewed. Still private.',
+      });
+      router.refresh();
+    } catch (error) {
+      setState({
+        kind: 'error',
+        message: error instanceof Error ? error.message : 'Failed.',
+      });
+    }
+  }
+
+  async function publish(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
+    event.preventDefault();
+    if (!draft?.reviewedGuard) return;
+    setState({ kind: 'sending', message: 'Publishing reviewed draft…' });
+    try {
+      const data = new FormData(event.currentTarget);
+      await sendMutation(`/api/admin/outcomes/${draft.id}`, 'PATCH', {
+        operation: 'publish',
+        expectedRevision: draft.reviewedGuard.revision,
+        expectedSnapshotHash: draft.reviewedGuard.snapshotHash,
+        publishExactReviewedDraft:
+          data.get('publishExactReviewedDraft') === 'on',
+      });
+      setState({ kind: 'success', message: 'Reviewed result published.' });
+      router.refresh();
+    } catch (error) {
+      setState({
+        kind: 'error',
+        message: error instanceof Error ? error.message : 'Failed.',
+      });
+    }
+  }
+
+  async function discard() {
+    if (!draft) return;
+    if (!window.confirm('Discard this private result draft?')) return;
+    setState({ kind: 'sending', message: 'Discarding…' });
+    try {
+      await sendMutation(`/api/admin/outcomes/${draft.id}`, 'PATCH', {
+        operation: 'discard',
+      });
+      setState({ kind: 'success', message: 'Private draft discarded.' });
+      router.refresh();
+    } catch (error) {
+      setState({
+        kind: 'error',
+        message: error instanceof Error ? error.message : 'Failed.',
+      });
+    }
+  }
+
   return (
-    <form className="admin-outcome-form" onSubmit={submit}>
-      <div className="form-two-column">
-        <label htmlFor="outcome-title">
-          Title
-          <Input
-            id="outcome-title"
-            name="title"
-            minLength={5}
-            maxLength={160}
+    <div className="admin-outcome-form">
+      <p>
+        {draft
+          ? 'Edit the private draft. Saving any change removes its review.'
+          : 'Start a private draft. Nothing here becomes public yet.'}
+      </p>
+      <form onSubmit={save}>
+        <div className="form-two-column">
+          <label htmlFor="outcome-title">
+            Short name
+            <Input
+              id="outcome-title"
+              name="title"
+              minLength={5}
+              maxLength={160}
+              defaultValue={draft?.title ?? ''}
+              required
+            />
+          </label>
+          <label htmlFor="outcome-confidence">
+            How sure are we?
+            <NativeSelect
+              id="outcome-confidence"
+              name="confidence"
+              defaultValue={draft?.confidence ?? 'claimed'}
+              required
+            >
+              <NativeSelectOption value="claimed">
+                We say this happened
+              </NativeSelectOption>
+              <NativeSelectOption value="observed">
+                We saw this happen
+              </NativeSelectOption>
+              <NativeSelectOption value="independently_verified">
+                Someone outside checked it
+              </NativeSelectOption>
+            </NativeSelect>
+          </label>
+        </div>
+        <label htmlFor="outcome-activity">
+          What did we do?
+          <Textarea
+            id="outcome-activity"
+            name="activity"
+            minLength={20}
+            maxLength={1500}
+            rows={3}
+            defaultValue={draft?.activity ?? ''}
             required
           />
         </label>
-        <label htmlFor="outcome-confidence">
-          Confidence
-          <NativeSelect id="outcome-confidence" name="confidence" required>
-            <NativeSelectOption value="claimed">Claimed</NativeSelectOption>
-            <NativeSelectOption value="observed">Observed</NativeSelectOption>
-            <NativeSelectOption value="independently_verified">
-              Independently verified
-            </NativeSelectOption>
-          </NativeSelect>
-        </label>
-      </div>
-      <label htmlFor="outcome-activity">
-        Activity completed
-        <Textarea
-          id="outcome-activity"
-          name="activity"
-          minLength={20}
-          maxLength={1500}
-          rows={3}
-          required
-        />
-      </label>
-      <label htmlFor="outcome-effect">
-        Observed effect
-        <Textarea
-          id="outcome-effect"
-          name="observedEffect"
-          minLength={20}
-          maxLength={1500}
-          rows={3}
-          required
-        />
-      </label>
-      <label htmlFor="outcome-evidence">
-        Evidence and method
-        <Textarea
-          id="outcome-evidence"
-          name="evidence"
-          minLength={20}
-          maxLength={2000}
-          rows={4}
-          required
-        />
-      </label>
-      <div className="form-two-column">
-        <label htmlFor="outcome-evidence-url">
-          Public evidence URL (optional)
-          <Input id="outcome-evidence-url" name="evidenceUrl" type="url" />
-        </label>
-        <label htmlFor="outcome-verifier">
-          Verifier
-          <Input
-            id="outcome-verifier"
-            name="verifierName"
-            minLength={2}
-            maxLength={120}
+        <label htmlFor="outcome-effect">
+          What happened?
+          <Textarea
+            id="outcome-effect"
+            name="observedEffect"
+            minLength={20}
+            maxLength={1500}
+            rows={3}
+            defaultValue={draft?.observedEffect ?? ''}
             required
           />
         </label>
-      </div>
-      <label htmlFor="outcome-benefit">
-        Who benefited
-        <Textarea
-          id="outcome-benefit"
-          name="whoBenefited"
-          minLength={10}
-          maxLength={1000}
-          rows={3}
-          required
-        />
-      </label>
-      <label htmlFor="outcome-limit">
-        What did not change
-        <Textarea
-          id="outcome-limit"
-          name="whatDidNotChange"
-          minLength={10}
-          maxLength={1000}
-          rows={3}
-          required
-        />
-      </label>
-      <label htmlFor="outcome-learning">
-        Learning and next decision
-        <Textarea
-          id="outcome-learning"
-          name="learning"
-          minLength={10}
-          maxLength={1500}
-          rows={3}
-          required
-        />
-      </label>
-      <Button type="submit" disabled={state.kind === 'sending'}>
-        Publish reviewed outcome
-      </Button>
+        <label htmlFor="outcome-evidence">
+          What proof do we have, and how did we check?
+          <Textarea
+            id="outcome-evidence"
+            name="evidence"
+            minLength={20}
+            maxLength={2000}
+            rows={4}
+            defaultValue={draft?.evidence ?? ''}
+            required
+          />
+        </label>
+        <div className="form-two-column">
+          <label htmlFor="outcome-evidence-url">
+            Public proof link — needed before review
+            <Input
+              id="outcome-evidence-url"
+              name="evidenceUrl"
+              type="url"
+              defaultValue={draft?.evidenceUrl ?? ''}
+            />
+          </label>
+          <label htmlFor="outcome-verifier">
+            Who checked it?
+            <Input
+              id="outcome-verifier"
+              name="verifierName"
+              minLength={2}
+              maxLength={120}
+              defaultValue={draft?.verifierName ?? ''}
+              required
+            />
+          </label>
+        </div>
+        <label htmlFor="outcome-benefit">
+          Who did this help?
+          <Textarea
+            id="outcome-benefit"
+            name="whoBenefited"
+            minLength={10}
+            maxLength={1000}
+            rows={3}
+            defaultValue={draft?.whoBenefited ?? ''}
+            required
+          />
+        </label>
+        <label htmlFor="outcome-limit">
+          What did not change
+          <Textarea
+            id="outcome-limit"
+            name="whatDidNotChange"
+            minLength={10}
+            maxLength={1000}
+            rows={3}
+            defaultValue={draft?.whatDidNotChange ?? ''}
+            required
+          />
+        </label>
+        <label htmlFor="outcome-learning">
+          What did we learn? What happens next?
+          <Textarea
+            id="outcome-learning"
+            name="learning"
+            minLength={10}
+            maxLength={1500}
+            rows={3}
+            defaultValue={draft?.learning ?? ''}
+            required
+          />
+        </label>
+        <input type="hidden" name="sourceMode" value="public_evidence_only" />
+        <div className="admin-item">
+          <h3>Source rule for this first version</h3>
+          <p>
+            Use public proof only. Private job replies stay private and cannot
+            be used to publish a result.
+          </p>
+        </div>
+        <Button type="submit" disabled={state.kind === 'sending'}>
+          {draft ? 'Save private result draft' : 'Start private result draft'}
+        </Button>
+      </form>
+
+      {draft?.publicationGuard && (
+        <>
+          <div
+            className="maintainer-preview"
+            data-publication-revision={draft.publicationGuard.revision}
+            data-publication-snapshot={draft.publicationGuard.snapshotHash}
+          >
+            <p className="mini-label">This is what will go public</p>
+            <OutcomePublicBody outcome={draft} />
+          </div>
+          <form onSubmit={review}>
+            <label className="maintainer-check">
+              <input type="checkbox" name="humanReviewed" />
+              I read every public word above.
+            </label>
+            <label className="maintainer-check">
+              <input type="checkbox" name="noPrivateDetails" />
+              The public words contain no quote, name or identifying detail.
+            </label>
+            <label className="maintainer-check">
+              <input type="checkbox" name="noPrivateRepliesUsed" />
+              No private reply shaped these words.
+            </label>
+            <label className="maintainer-check">
+              <input type="checkbox" name="publicEvidenceOpened" />
+              I opened the proof link without signing in.
+            </label>
+            <label className="maintainer-check">
+              <input
+                type="checkbox"
+                name="publicEvidenceContainsNoPrivateMaterial"
+              />
+              The proof link contains no private or identifying material.
+            </label>
+            <Button type="submit" disabled={state.kind === 'sending'}>
+              I reviewed these exact words and sources
+            </Button>
+          </form>
+        </>
+      )}
+
+      {draft?.reviewedGuard && (
+        <form onSubmit={publish}>
+          <p className="admin-warning">
+            This exact reviewed draft can now become public. Any saved change
+            makes this button stop working until a fresh review.
+          </p>
+          <label className="maintainer-check">
+            <input type="checkbox" name="publishExactReviewedDraft" />
+            Publish exactly the reviewed draft.
+          </label>
+          <Button type="submit" disabled={state.kind === 'sending'}>
+            Publish this reviewed result
+          </Button>
+        </form>
+      )}
+
+      {draft && (
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={discard}
+          disabled={state.kind === 'sending'}
+        >
+          Discard private result draft
+        </Button>
+      )}
       <p
         className={state.kind === 'error' ? 'admin-error' : ''}
         aria-live="polite"
       >
         {state.message}
       </p>
-    </form>
+    </div>
   );
 }
 
@@ -1020,6 +1229,9 @@ export function AdminDashboard({
   actionInvites,
   actionResponses,
   retentionEvents,
+  retentionSweep,
+  retentionHeartbeatState,
+  outcomes,
   updates,
   proposals,
   appeals,
@@ -1037,6 +1249,9 @@ export function AdminDashboard({
   actionInvites: AdminActionInvite[];
   actionResponses: AdminActionResponse[];
   retentionEvents: AdminRetentionEvent[];
+  retentionSweep: AdminRetentionSweep | null;
+  retentionHeartbeatState: RetentionHeartbeatState;
+  outcomes: AdminOutcome[];
   updates: AdminRepairUpdate[];
   proposals: AdminProposal[];
   appeals: AdminAppeal[];
@@ -1078,6 +1293,7 @@ export function AdminDashboard({
             pilotInvitesAuthorized={pilotInvitesAuthorized}
             pilotTermsApproved={pilotTermsApproved}
             publicIntakeOpen={publicIntakeOpen}
+            retentionHeartbeatState={retentionHeartbeatState}
           />
           <StewardPanel
             repair={repair}
@@ -1137,9 +1353,33 @@ export function AdminDashboard({
           <h2>Job replies</h2>
           <p>
             Every full reply has its own erase-after time. Overdue replies are
-            hidden before this page loads and the site then tries to erase them.
-            The deletion log below stores only a count and dates, never answers.
+            erased by an automatic check. Page loads also check as a backup. The
+            proof below stores only counts and dates, never answers.
           </p>
+          {retentionHeartbeatState === 'recent' &&
+          retentionSweep?.lastCompletedAt ? (
+            <p>
+              Automatic deletion check working. Last check:{' '}
+              {new Date(retentionSweep.lastCompletedAt).toLocaleString('en-GB')}{' '}
+              · {retentionSweep.runCount} run
+              {retentionSweep.runCount === 1 ? '' : 's'} recorded.
+            </p>
+          ) : (
+            <p className="admin-warning">
+              {retentionHeartbeatState === 'failed'
+                ? 'The automatic deletion check failed.'
+                : retentionHeartbeatState === 'stale'
+                  ? 'The automatic deletion check is late.'
+                  : retentionHeartbeatState === 'invalid'
+                    ? 'The automatic deletion check has an invalid time.'
+                    : 'No independent automatic deletion check has been proved.'}{' '}
+              {retentionSweep?.lastCompletedAt &&
+                `Last good check: ${new Date(
+                  retentionSweep.lastCompletedAt,
+                ).toLocaleString('en-GB')}. `}
+              Links and replies are off.
+            </p>
+          )}
           {actionResponses.length > 0 && (
             <StopAndDeletePilotButton
               repairId={repair.id}
@@ -1170,10 +1410,7 @@ export function AdminDashboard({
                     {response.consentPrivateUse ? 'yes' : 'no'} · Adult
                     confirmed: {response.confirmedAdult ? 'yes' : 'no'}
                   </p>
-                  <p>
-                    Nameless public totals allowed:{' '}
-                    {response.consentAnonymousSummary ? 'yes' : 'no'}
-                  </p>
+                  <p>Public result use: no. Private answers stay private.</p>
                   <p>
                     Full answer hidden and due to be erased after:{' '}
                     {new Date(response.deleteAfter).toLocaleString('en-GB')}
@@ -1295,12 +1532,12 @@ export function AdminDashboard({
 
       {repair.isPublished && (
         <section>
-          <h2>Publish a reviewed outcome</h2>
+          <h2>Make a checked result</h2>
           <p className="admin-warning">
-            This action is immediately public. Verify consent, evidence,
-            confidence level and identifying detail before submitting.
+            First save a private draft. Then check the exact words and sources.
+            Publishing is a separate last step.
           </p>
-          <OutcomePublisher repairId={repair.id} />
+          <OutcomePublisher repairId={repair.id} outcomes={outcomes} />
         </section>
       )}
     </div>
