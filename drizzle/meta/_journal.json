@@ -22,6 +22,27 @@
       "when": 1788083349963,
       "tag": "0002_plain_language_demo",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1788086526124,
+      "tag": "0003_first_real_job",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1788087008254,
+      "tag": "0004_split_response_consent",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1788088961885,
+      "tag": "0005_gate_first_test_preview",
+      "breakpoints": true
     }
   ]
 }

@@ -12,6 +12,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type {
   ActionCard,
+  AdminActionResponse,
   AdminAppeal,
   AdminProposal,
   Repair,
@@ -92,6 +93,61 @@ function StatusEditor({
         disabled={state.kind === 'sending'}
       >
         Save
+      </Button>
+      <span
+        className={state.kind === 'error' ? 'admin-error' : ''}
+        aria-live="polite"
+      >
+        {state.message}
+      </span>
+    </div>
+  );
+}
+
+function DeleteResponseButton({ responseId }: { responseId: string }) {
+  const router = useRouter();
+  const [state, setState] = useState<MutationState>(idleState);
+
+  async function remove() {
+    if (
+      !window.confirm(
+        'Permanently delete this full reply? This cannot be undone.',
+      )
+    ) {
+      return;
+    }
+    setState({ kind: 'sending', message: 'Deleting…' });
+    try {
+      const response = await fetch(
+        `/api/admin/action-responses/${responseId}`,
+        { method: 'DELETE' },
+      );
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        message?: string;
+      };
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.message ?? 'The reply could not be deleted.');
+      }
+      setState({ kind: 'success', message: 'Reply deleted.' });
+      router.refresh();
+    } catch (error) {
+      setState({
+        kind: 'error',
+        message: error instanceof Error ? error.message : 'Failed.',
+      });
+    }
+  }
+
+  return (
+    <div className="admin-delete-row">
+      <Button
+        type="button"
+        variant="destructive"
+        onClick={remove}
+        disabled={state.kind === 'sending'}
+      >
+        Delete full reply
       </Button>
       <span
         className={state.kind === 'error' ? 'admin-error' : ''}
@@ -455,12 +511,14 @@ function StewardPanel({
 export function AdminDashboard({
   repair,
   actions,
+  actionResponses,
   proposals,
   appeals,
   stewardBriefs,
 }: {
   repair: Repair;
   actions: ActionCard[];
+  actionResponses: AdminActionResponse[];
   proposals: AdminProposal[];
   appeals: AdminAppeal[];
   stewardBriefs: StewardBrief[];
@@ -510,6 +568,49 @@ export function AdminDashboard({
             </article>
           ))}
         </div>
+      </section>
+
+      <section>
+        <h2>Job replies</h2>
+        {actionResponses.length === 0 ? (
+          <p className="empty-ledger">No replies to the current job.</p>
+        ) : (
+          <div className="admin-list">
+            {actionResponses.map((response) => (
+              <article className="admin-item" key={response.id}>
+                <p className="mini-label">
+                  {response.id} · {response.status} ·{' '}
+                  {new Date(response.createdAt).toLocaleString('en-GB')}
+                </p>
+                <h3>{response.actionTitle}</h3>
+                <ol className="admin-response-list">
+                  {response.questions.map((question, index) => (
+                    <li key={question}>
+                      <strong>{question}</strong>
+                      <p>{response.answers[index]}</p>
+                    </li>
+                  ))}
+                </ol>
+                <p>
+                  Private test consent:{' '}
+                  {response.consentPrivateUse ? 'yes' : 'no'} · Adult confirmed:{' '}
+                  {response.confirmedAdult ? 'yes' : 'no'}
+                </p>
+                <p>
+                  Nameless public totals allowed:{' '}
+                  {response.consentAnonymousSummary ? 'yes' : 'no'}
+                </p>
+                <StatusEditor
+                  url={`/api/admin/action-responses/${response.id}`}
+                  field="status"
+                  value={response.status}
+                  options={['new', 'reviewed', 'rejected']}
+                />
+                <DeleteResponseButton responseId={response.id} />
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section>

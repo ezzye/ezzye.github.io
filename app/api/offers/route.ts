@@ -19,24 +19,23 @@ export async function POST(request: Request) {
     }
     if (!(await allowRequest(request, 'offer', 6))) {
       throw new RequestValidationError(
-        'Too many offers were sent from this connection. Please try again later.',
+        'Too many offers were sent from this connection. Try again later.',
         {},
         429,
       );
     }
     if (!booleanField(body.consentContact)) {
       throw new RequestValidationError(
-        'Permission to contact you is required.',
+        'We need permission to email you about this job.',
         {
-          consentContact:
-            'We need permission to reply about this bounded task.',
+          consentContact: 'Tick this if you want to offer help.',
         },
       );
     }
     if (!booleanField(body.covenantAccepted)) {
       throw new RequestValidationError(
-        'You must affirm the community covenant before joining a repair.',
-        { covenantAccepted: 'Read and affirm the covenant to continue.' },
+        'You need to agree to the ground rule before sending.',
+        { covenantAccepted: 'Agree to the ground rule to carry on.' },
       );
     }
 

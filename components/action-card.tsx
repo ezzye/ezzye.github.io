@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import {
+  ArrowRight,
   CalendarClock,
   CircleStop,
   MapPin,
@@ -10,8 +12,10 @@ import {
 import { OfferHelpForm } from '@/components/offer-help-form';
 import { formatDate } from '@/components/repair-card';
 import { ActionStatusBadge } from '@/components/workshop-status';
+import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ActionCard as ActionCardType } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 export function ActionCard({
   action,
@@ -21,13 +25,21 @@ export function ActionCard({
   isDemo?: boolean;
 }) {
   const acceptingOffers =
-    action.status === 'ready' || action.status === 'offered';
+    (action.status === 'ready' || action.status === 'offered') &&
+    action.compensation !== 'Pay not set — job cannot open' &&
+    !action.isPreview;
+  const hasDirectResponsePage =
+    action.participationMode === 'direct_response' &&
+    action.responseQuestions.length > 0 &&
+    Boolean(action.responsePath);
   return (
     <Card className="action-card">
       <CardHeader>
         <div className="ledger-card-meta">
           {isDemo ? (
             <span className="demo-label">Made-up job — not open</span>
+          ) : action.isPreview ? (
+            <span className="demo-label">Owner-only preview — not open</span>
           ) : (
             <ActionStatusBadge status={action.status} />
           )}
@@ -49,12 +61,24 @@ export function ActionCard({
             </dt>
             <dd>{action.locationMode}</dd>
           </div>
+          {!isDemo && (
+            <div>
+              <dt>Pay</dt>
+              <dd>{action.compensation}</dd>
+            </div>
+          )}
           <div>
             <dt>
-              <Users aria-hidden="true" /> People needed
+              <Users aria-hidden="true" />{' '}
+              {action.participationMode === 'direct_response'
+                ? 'Replies needed'
+                : 'People needed'}
             </dt>
             <dd>
-              {action.capacity} contributor{action.capacity === 1 ? '' : 's'}
+              {action.capacity}
+              {action.participationMode === 'direct_response'
+                ? ''
+                : ` contributor${action.capacity === 1 ? '' : 's'}`}
             </dd>
           </div>
           <div>
@@ -72,6 +96,22 @@ export function ActionCard({
             This job is made up. No work or pay is being offered.
           </p>
         )}
+        {!isDemo &&
+          action.participationMode === 'direct_response' &&
+          !hasDirectResponsePage && (
+            <p className="demo-job-stop">
+              This job is not ready to take replies.
+            </p>
+          )}
+        {!isDemo &&
+          action.participationMode === 'direct_response' &&
+          !action.isPreview &&
+          hasDirectResponsePage &&
+          !acceptingOffers && (
+            <p className="demo-job-stop">
+              This job is closed. We are checking the replies now.
+            </p>
+          )}
         <details className="job-more">
           <summary>More about this job</summary>
           <div className="action-detail-grid">
@@ -99,7 +139,24 @@ export function ActionCard({
             </div>
           </div>
         </details>
-        {!isDemo && acceptingOffers && (
+        {!isDemo && hasDirectResponsePage && (
+          <div className="offer-disclosure direct-response-link">
+            {action.isPreview && (
+              <p>
+                Answers are off. You can check the form, but nothing can be
+                sent.
+              </p>
+            )}
+            <Link
+              className={cn(buttonVariants({ size: 'lg' }), 'plain-button')}
+              href={action.responsePath!}
+            >
+              {action.isPreview ? 'Preview the form' : 'Do this job now'}
+              <ArrowRight aria-hidden="true" />
+            </Link>
+          </div>
+        )}
+        {!isDemo && acceptingOffers && action.participationMode === 'offer' && (
           <details className="offer-disclosure">
             <summary>I can help with this job</summary>
             <OfferHelpForm actionId={action.id} actionTitle={action.title} />

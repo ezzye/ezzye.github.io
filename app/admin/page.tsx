@@ -6,6 +6,7 @@ import { AdminDashboard } from '@/components/admin-dashboard';
 import { SiteShell } from '@/components/site-shell';
 import {
   getAdminAppeals,
+  getAdminActionResponses,
   getAdminProposals,
   getAdminStewardBriefs,
   getCurrentRepairBundle,
@@ -52,11 +53,13 @@ export default async function AdminPage() {
   }
 
   const bundle = await getCurrentRepairBundle();
-  const [proposals, appeals, stewardBriefs] = await Promise.all([
-    getAdminProposals(),
-    getAdminAppeals(),
-    getAdminStewardBriefs(bundle.repair.id),
-  ]);
+  const [proposals, appeals, stewardBriefs, actionResponses] =
+    await Promise.all([
+      getAdminProposals(),
+      getAdminAppeals(),
+      getAdminStewardBriefs(bundle.repair.id),
+      getAdminActionResponses(bundle.repair.id),
+    ]);
 
   return (
     <SiteShell>
@@ -73,6 +76,7 @@ export default async function AdminPage() {
         <AdminDashboard
           repair={bundle.repair}
           actions={bundle.actions}
+          actionResponses={actionResponses}
           proposals={proposals}
           appeals={appeals}
           stewardBriefs={stewardBriefs}

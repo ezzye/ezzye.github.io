@@ -50,6 +50,19 @@ export const actionCards = sqliteTable(
     intendedOutput: text('intended_output').notNull(),
     whyItMatters: text('why_it_matters').notNull(),
     timeSize: text('time_size').notNull(),
+    compensation: text('compensation')
+      .notNull()
+      .default('Pay not set — job cannot open'),
+    participationMode: text('participation_mode', {
+      enum: ['offer', 'direct_response'],
+    })
+      .notNull()
+      .default('offer'),
+    responseQuestions: text('response_questions').notNull().default('[]'),
+    responsePath: text('response_path'),
+    isPreview: integer('is_preview', { mode: 'boolean' })
+      .notNull()
+      .default(false),
     skillsNeeded: text('skills_needed').notNull(),
     locationMode: text('location_mode').notNull(),
     ownerName: text('owner_name').notNull(),
@@ -75,6 +88,40 @@ export const actionCards = sqliteTable(
   (table) => [
     index('idx_actions_repair_sort').on(table.repairId, table.sortOrder),
     index('idx_actions_status').on(table.status),
+  ],
+);
+
+export const actionResponses = sqliteTable(
+  'action_responses',
+  {
+    id: text('id').primaryKey(),
+    actionId: text('action_id')
+      .notNull()
+      .references(() => actionCards.id, { onDelete: 'cascade' }),
+    questions: text('questions').notNull(),
+    answers: text('answers').notNull(),
+    consentPrivateUse: integer('consent_private_use', { mode: 'boolean' })
+      .notNull()
+      .default(false),
+    consentAnonymousSummary: integer('consent_anonymous_summary', {
+      mode: 'boolean',
+    })
+      .notNull()
+      .default(false),
+    confirmedAdult: integer('confirmed_adult', { mode: 'boolean' })
+      .notNull()
+      .default(false),
+    status: text('status', { enum: ['new', 'reviewed', 'rejected'] })
+      .notNull()
+      .default('new'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [
+    index('idx_action_responses_action_status').on(
+      table.actionId,
+      table.status,
+    ),
   ],
 );
 

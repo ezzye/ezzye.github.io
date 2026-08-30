@@ -22,8 +22,9 @@ export default function PrivacyPage() {
         <h2>What we keep</h2>
         <p>
           We keep what you type in a form, your choices and your email if you
-          give it to us. We also keep a small record to stop spam. Do not send
-          passwords, case numbers, medical notes, witness statements or files.
+          give it to us. The home-page test asks for no name or email. We also
+          keep a small record to stop spam. Do not send passwords, case numbers,
+          medical notes, witness statements or files.
         </p>
         <h2>Why we keep it</h2>
         <p>
@@ -47,13 +48,17 @@ export default function PrivacyPage() {
         <h2>What you can ask us to do</h2>
         <p>
           You can ask to see, fix, limit or delete what we hold. Use “Ask us to
-          fix a mistake”. Sometimes the law or safety rules mean we cannot
-          delete it. If so, we should tell you why.
+          fix a mistake”. Keep the reference from the home-page test: because we
+          ask for no name or email, that is how we find your reply. Sometimes
+          the law or safety rules mean we cannot delete it. If so, we should
+          tell you why.
         </p>
-        <h2>Before we ask real people to use this</h2>
+        <h2>Before we invite anyone outside</h2>
         <p>
-          We still need a named person in charge of the data, a contact address
-          and a full UK GDPR check. Until then, do not send private case files.
+          This first test is an owner-only preview. Before we invite people to
+          take part, we still need a named person in charge of the data, a
+          contact address and a full UK GDPR check. Until then, do not share the
+          test or send private case files.
         </p>
       </section>
     </SiteShell>

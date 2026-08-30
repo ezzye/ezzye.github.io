@@ -14,7 +14,7 @@ export function SiteHeader() {
         <span>Coding for Justice</span>
       </Link>
       <nav aria-label="Primary navigation" className="header-nav">
-        <Link href="/repairs/public-consultation#open-jobs">Example job</Link>
+        <Link href="/repairs">Open jobs</Link>
         <Link href="/outcomes">What changed</Link>
         <Link href="/covenant">Our rules</Link>
         <Link

@@ -4,40 +4,50 @@ import { ArrowRight, Check } from 'lucide-react';
 
 import { SiteShell } from '@/components/site-shell';
 import { buttonVariants } from '@/components/ui/button';
-import { getCurrentRepairBundle } from '@/db/queries';
+import { getHomeRepairBundle } from '@/db/queries';
 import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-const choices = [
-  {
-    number: '1',
-    title: 'I want to help',
-    body: 'See the kind of small job we will post. No real job is open yet.',
-    link: '/repairs/public-consultation#open-jobs',
-    action: 'See an example job',
-  },
-  {
-    number: '2',
-    title: 'I need help',
-    body: 'Tell us about a bad rule, form or service. What you send stays private.',
-    link: '/start',
-    action: 'Tell us what is wrong',
-  },
-  {
-    number: '3',
-    title: 'I want to look',
-    body: 'See what people tried, what worked and what did not.',
-    link: '/outcomes',
-    action: 'See what changed',
-  },
-];
-
 export default async function Home() {
-  const bundle = await getCurrentRepairBundle();
+  const bundle = await getHomeRepairBundle();
   const nextAction = bundle.actions.find(
-    (action) => action.status === 'ready' || action.status === 'offered',
+    (action) =>
+      (action.status === 'ready' || action.status === 'offered') &&
+      action.compensation !== 'Pay not set — job cannot open' &&
+      (action.participationMode === 'offer' ||
+        (action.responseQuestions.length > 0 && action.responsePath)),
   );
+  const hasRealJob = !bundle.repair.isDemo && Boolean(nextAction);
+  const jobLink =
+    nextAction?.responsePath ?? `/repairs/${bundle.repair.slug}#open-jobs`;
+  const choices = [
+    {
+      number: '1',
+      title: nextAction?.isPreview ? 'Preview the first job' : 'I want to help',
+      body: hasRealJob
+        ? nextAction?.isPreview
+          ? 'Answers are off. Check the wording and flow.'
+          : `A real job is open. ${nextAction?.timeSize}. ${nextAction?.compensation}`
+        : 'See the kind of small job we will post. No real job is open yet.',
+      link: hasRealJob ? jobLink : '/repairs/public-consultation#open-jobs',
+      action: hasRealJob ? 'Check the first job' : 'See an example job',
+    },
+    {
+      number: '2',
+      title: 'I need help',
+      body: 'Tell us about a bad rule, form or service. What you send stays private.',
+      link: '/start',
+      action: 'Tell us what is wrong',
+    },
+    {
+      number: '3',
+      title: 'I want to look',
+      body: 'See what people tried, what worked and what did not.',
+      link: '/outcomes',
+      action: 'See what changed',
+    },
+  ];
 
   return (
     <SiteShell>
@@ -107,43 +117,62 @@ export default async function Home() {
 
       <section className="one-job" aria-labelledby="one-job-title">
         <div>
-          <p className="plain-kicker">Made-up example</p>
-          <h2 id="one-job-title">Read one short guide</h2>
+          <p className="plain-kicker">
+            {hasRealJob ? 'First job — owner-only preview' : 'Made-up example'}
+          </p>
+          <h2 id="one-job-title">
+            {hasRealJob ? nextAction?.title : 'Read one short guide'}
+          </h2>
           <p className="one-job-lede">
-            Read one page. Tell us what is hard to follow.
+            {hasRealJob
+              ? nextAction?.intendedOutput
+              : 'Read one page. Tell us what is hard to follow.'}
           </p>
           <ul className="job-facts" aria-label="Job facts">
             <li>
-              <Check aria-hidden="true" /> 20 mins
+              <Check aria-hidden="true" />{' '}
+              {hasRealJob ? nextAction?.timeSize : '20 mins'}
             </li>
             <li>
-              <Check aria-hidden="true" /> At home
+              <Check aria-hidden="true" />{' '}
+              {hasRealJob ? nextAction?.locationMode : 'At home'}
             </li>
             <li>
-              <Check aria-hidden="true" /> No expert skill needed
+              <Check aria-hidden="true" />{' '}
+              {hasRealJob ? nextAction?.compensation : 'No expert skill needed'}
             </li>
           </ul>
           <Link
             className={cn(buttonVariants({ size: 'lg' }), 'plain-button')}
-            href={`/repairs/${bundle.repair.slug}#open-jobs`}
+            href={jobLink}
           >
-            See how this job would work <ArrowRight aria-hidden="true" />
+            {hasRealJob
+              ? 'Check the 10-minute test'
+              : 'See how this job would work'}{' '}
+            <ArrowRight aria-hidden="true" />
           </Link>
           <p className="click-note">
-            This is not a real job. You cannot sign up for it.
+            {hasRealJob
+              ? 'Owner-only preview. Do not invite people yet. The privacy checks must come first.'
+              : 'This is not a real job. You cannot sign up for it.'}
           </p>
         </div>
         <aside className="demo-note">
-          <strong>No real job is open yet.</strong>
+          <strong>
+            {hasRealJob
+              ? `${nextAction?.capacity} replies, then we check them.`
+              : 'No real job is open yet.'}
+          </strong>
           <p>
-            It uses a made-up council letter. No real person or town is named.
+            {hasRealJob
+              ? 'Before we ask people to fix other bad pages, we need to know this site makes sense.'
+              : 'It uses a made-up council letter. No real person or town is named.'}
           </p>
-          {nextAction && (
-            <p>
-              A real job page would show its {nextAction.capacity} open places
-              here.
-            </p>
-          )}
+          <p>
+            {hasRealJob
+              ? 'Please do not read the plan first. We need fresh eyes.'
+              : `A real job page would show its ${nextAction?.capacity ?? 2} open places here.`}
+          </p>
         </aside>
       </section>
 
@@ -152,8 +181,8 @@ export default async function Home() {
           <p className="plain-kicker">How it works</p>
           <h2 id="steps-title">Yes. It is a task list.</h2>
           <p>
-            You offer to help with one job. We check it is safe and a good fit.
-            You do the job. We show what changed.
+            Pick a job. The page tells you whether to do it now or offer help.
+            We check the result. Then we say what changed.
           </p>
         </div>
         <ol>
@@ -164,8 +193,8 @@ export default async function Home() {
           </li>
           <li>
             <span>2</span>
-            <strong>Do the job</strong>
-            <p>Work alone or with one other person.</p>
+            <strong>Do it or offer help</strong>
+            <p>Each job says which one.</p>
           </li>
           <li>
             <span>3</span>

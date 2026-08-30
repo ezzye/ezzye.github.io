@@ -49,6 +49,11 @@ export type ActionCard = {
   intendedOutput: string;
   whyItMatters: string;
   timeSize: string;
+  compensation: string;
+  participationMode: 'offer' | 'direct_response';
+  responseQuestions: string[];
+  responsePath: string | null;
+  isPreview: boolean;
   skillsNeeded: string;
   locationMode: string;
   ownerName: string;
@@ -138,6 +143,19 @@ export type ActionOfferInput = {
   accessibilityNeed: string | null;
   covenantVersion: string;
   consentContact: boolean;
+};
+
+export type AdminActionResponse = {
+  id: string;
+  actionId: string;
+  actionTitle: string;
+  questions: string[];
+  answers: string[];
+  consentPrivateUse: boolean;
+  consentAnonymousSummary: boolean;
+  confirmedAdult: boolean;
+  status: 'new' | 'reviewed' | 'rejected';
+  createdAt: string;
 };
 
 export type AppealInput = {

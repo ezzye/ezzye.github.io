@@ -28,6 +28,13 @@ export default async function RepairPage({ params }: PageProps) {
   const bundle = await getPublicRepairBundle(slug);
   if (!bundle) notFound();
   const { repair, actions, outcomes, updates } = bundle;
+  const hasDirectResponse = actions.some(
+    (action) => action.participationMode === 'direct_response',
+  );
+  const hasPreviewResponse = actions.some(
+    (action) =>
+      action.participationMode === 'direct_response' && action.isPreview,
+  );
 
   return (
     <SiteShell>
@@ -45,8 +52,11 @@ export default async function RepairPage({ params }: PageProps) {
         <h1>{repair.title}</h1>
         <p>{repair.summary}</p>
         <p className="page-help">
-          Read this page to see what is wrong. Jump to the small jobs to see how
-          helping would work.
+          {hasPreviewResponse
+            ? 'This is an owner-only preview. The form is below, but answers are off.'
+            : hasDirectResponse
+              ? 'The job is below. Answer five short questions. No name or email.'
+              : 'Read this page to see what is wrong. Jump to the small jobs to see how helping would work.'}
         </p>
         <dl className="hero-ledger">
           <div>
@@ -65,7 +75,12 @@ export default async function RepairPage({ params }: PageProps) {
             <dt>
               <ShieldCheck aria-hidden="true" /> Group we work with
             </dt>
-            <dd>{repair.partnerName ?? 'None — this page is made up'}</dd>
+            <dd>
+              {repair.partnerName ??
+                (repair.isDemo
+                  ? 'None — this page is made up'
+                  : 'No outside group yet')}
+            </dd>
           </div>
         </dl>
       </header>
@@ -127,13 +142,21 @@ export default async function RepairPage({ params }: PageProps) {
             <h2 id="actions-title">
               {repair.isDemo
                 ? 'See how helping would work'
-                : 'Pick one small job'}
+                : hasPreviewResponse
+                  ? 'Preview the 10-minute form'
+                  : hasDirectResponse
+                    ? 'Do this 10-minute job'
+                    : 'Pick one small job'}
             </h2>
           </div>
           <p>
             {repair.isDemo
               ? 'These jobs are made up. You cannot sign up. A real job will say if it is paid or unpaid.'
-              : 'Saying “I can help” does not give you the job. We first check it is safe, clear and a good fit.'}
+              : hasPreviewResponse
+                ? 'Answers are not being accepted. Check the wording and safeguards. Do not invite testers yet.'
+                : hasDirectResponse
+                  ? 'Do this job on this page. We ask for no name or email. Full answers stay private. We only publish nameless totals or a short summary if you say yes.'
+                  : 'Saying “I can help” does not give you the job. We first check it is safe, clear and a good fit.'}
           </p>
         </div>
         <div className="card-grid action-grid">

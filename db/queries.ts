@@ -4,6 +4,7 @@ import { demoBundle } from '@/lib/demo-data';
 import type {
   ActionCard,
   ActionOfferInput,
+  AdminActionResponse,
   AdminAppeal,
   AdminProposal,
   AppealInput,
@@ -45,6 +46,11 @@ type ActionRow = {
   intended_output: string;
   why_it_matters: string;
   time_size: string;
+  compensation: string;
+  participation_mode: ActionCard['participationMode'];
+  response_questions: string;
+  response_path: string | null;
+  is_preview: number;
   skills_needed: string;
   location_mode: string;
   owner_name: string;
@@ -88,6 +94,30 @@ type UpdateRow = {
   next_review_date: string;
   published_at: string;
 };
+
+type AdminActionResponseRow = {
+  id: string;
+  action_id: string;
+  action_title: string;
+  questions: string;
+  answers: string;
+  consent_private_use: number;
+  consent_anonymous_summary: number;
+  confirmed_adult: number;
+  status: AdminActionResponse['status'];
+  created_at: string;
+};
+
+function parseStringList(value: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+}
 
 type CorrectionRow = {
   id: string;
@@ -142,6 +172,11 @@ function mapAction(row: ActionRow): ActionCard {
     intendedOutput: row.intended_output,
     whyItMatters: row.why_it_matters,
     timeSize: row.time_size,
+    compensation: row.compensation,
+    participationMode: row.participation_mode,
+    responseQuestions: parseStringList(row.response_questions),
+    responsePath: row.response_path,
+    isPreview: Boolean(row.is_preview),
     skillsNeeded: row.skills_needed,
     locationMode: row.location_mode,
     ownerName: row.owner_name,
@@ -254,8 +289,16 @@ export async function getPublicRepairBundle(
     const [actions, outcomeRows, updateRows] = await Promise.all([
       env.DB.prepare(
         `SELECT id, repair_id, title, intended_output, why_it_matters,
-          time_size, skills_needed, location_mode, owner_name, reviewer_name,
-          capacity, status, evidence_required, review_date, stop_condition,
+          time_size, compensation, participation_mode, response_questions,
+          response_path, is_preview,
+          skills_needed, location_mode, owner_name, reviewer_name,
+          capacity,
+          CASE
+            WHEN date(review_date) < date('now')
+              AND status IN ('ready', 'offered') THEN 'stopped'
+            ELSE status
+          END AS status,
+          evidence_required, review_date, stop_condition,
           sort_order
         FROM action_cards WHERE repair_id = ? ORDER BY sort_order, id`,
       )
@@ -295,11 +338,50 @@ export async function getPublicRepairBundle(
 }
 
 export async function getCurrentRepairBundle(): Promise<RepairBundle> {
+  try {
+    const row = await env.DB.prepare(
+      `SELECT slug FROM repairs
+       WHERE is_published = 1 AND is_demo = 0
+       ORDER BY updated_at DESC LIMIT 1`,
+    ).first<{ slug: string }>();
+    if (row) {
+      return (await getPublicRepairBundle(row.slug)) ?? demoBundle;
+    }
+  } catch (error) {
+    databaseError('current real repair', error);
+  }
   const repairs = await getPublicRepairs();
   return (
     (await getPublicRepairBundle(repairs[0]?.slug ?? demoBundle.repair.slug)) ??
     demoBundle
   );
+}
+
+export async function getHomeRepairBundle(): Promise<RepairBundle> {
+  try {
+    const row = await env.DB.prepare(
+      `SELECT r.slug
+       FROM repairs r
+       WHERE r.is_published = 1 AND r.is_demo = 0
+         AND r.stage NOT IN ('closed', 'stopped')
+         AND EXISTS (
+           SELECT 1 FROM action_cards a
+           WHERE a.repair_id = r.id
+             AND a.status IN ('ready', 'offered')
+             AND a.compensation != 'Pay not set — job cannot open'
+             AND date(a.review_date) >= date('now')
+         )
+       ORDER BY r.updated_at DESC
+       LIMIT 1`,
+    ).first<{ slug: string }>();
+
+    if (row) {
+      return (await getPublicRepairBundle(row.slug)) ?? demoBundle;
+    }
+  } catch (error) {
+    databaseError('home repair', error);
+  }
+  return demoBundle;
 }
 
 export async function getLatestOutcomes(limit = 20): Promise<Outcome[]> {
@@ -390,6 +472,11 @@ export async function createActionOffer(
     `SELECT a.id FROM action_cards a
      JOIN repairs r ON r.id = a.repair_id
      WHERE a.id = ? AND r.is_published = 1
+       AND r.is_demo = 0 AND r.stage NOT IN ('closed', 'stopped')
+       AND a.participation_mode = 'offer'
+       AND a.is_preview = 0
+       AND a.compensation != 'Pay not set — job cannot open'
+       AND date(a.review_date) >= date('now')
        AND a.status IN ('ready', 'offered')`,
   )
     .bind(input.actionId)
@@ -418,6 +505,217 @@ export async function createActionOffer(
     )
     .run();
   return id;
+}
+
+export async function getDirectActionTask(actionId: string): Promise<{
+  questions: string[];
+  capacity: number;
+} | null> {
+  const row = await env.DB.prepare(
+    `SELECT a.response_questions, a.capacity
+     FROM action_cards a
+     JOIN repairs r ON r.id = a.repair_id
+     WHERE a.id = ? AND r.is_published = 1 AND r.is_demo = 0
+       AND r.stage NOT IN ('closed', 'stopped')
+       AND a.participation_mode = 'direct_response'
+       AND a.is_preview = 0 AND a.response_path IS NOT NULL
+       AND a.compensation != 'Pay not set — job cannot open'
+       AND date(a.review_date) >= date('now')
+       AND a.status IN ('ready', 'offered')`,
+  )
+    .bind(actionId)
+    .first<{ response_questions: string; capacity: number }>();
+  if (!row) return null;
+  return {
+    questions: parseStringList(row.response_questions),
+    capacity: row.capacity,
+  };
+}
+
+export async function createActionResponse(input: {
+  actionId: string;
+  answers: string[];
+  consentPrivateUse: boolean;
+  consentAnonymousSummary: boolean;
+  confirmedAdult: boolean;
+}): Promise<string | null> {
+  const id = `response_${crypto.randomUUID()}`;
+  const now = new Date().toISOString();
+  const inserted = await env.DB.prepare(
+    `INSERT INTO action_responses (
+      id, action_id, questions, answers, consent_private_use,
+      consent_anonymous_summary, confirmed_adult, status, created_at,
+      updated_at
+    )
+    SELECT ?, a.id, a.response_questions, ?, ?, ?, ?, 'new', ?, ?
+    FROM action_cards a
+    JOIN repairs r ON r.id = a.repair_id
+    WHERE a.id = ? AND r.is_published = 1 AND r.is_demo = 0
+        AND r.stage NOT IN ('closed', 'stopped')
+        AND a.participation_mode = 'direct_response'
+        AND a.is_preview = 0 AND a.response_path IS NOT NULL
+        AND a.compensation != 'Pay not set — job cannot open'
+        AND date(a.review_date) >= date('now')
+        AND a.status IN ('ready', 'offered')
+    AND (
+      SELECT COUNT(*) FROM action_responses
+      WHERE action_id = a.id AND status != 'rejected'
+    ) < a.capacity`,
+  )
+    .bind(
+      id,
+      JSON.stringify(input.answers),
+      input.consentPrivateUse ? 1 : 0,
+      input.consentAnonymousSummary ? 1 : 0,
+      input.confirmedAdult ? 1 : 0,
+      now,
+      now,
+      input.actionId,
+    )
+    .run();
+
+  if (Number(inserted.meta.changes ?? 0) !== 1) return null;
+
+  await env.DB.prepare(
+    `UPDATE action_cards SET status = 'review'
+     WHERE id = ? AND capacity <= (
+       SELECT COUNT(*) FROM action_responses
+       WHERE action_id = ? AND status != 'rejected'
+     )`,
+  )
+    .bind(input.actionId, input.actionId)
+    .run();
+  return id;
+}
+
+export async function getAdminActionResponses(
+  repairId: string,
+): Promise<AdminActionResponse[]> {
+  const result = await env.DB.prepare(
+    `SELECT ar.id, ar.action_id, a.title AS action_title,
+      ar.questions, ar.answers, ar.consent_private_use,
+      ar.consent_anonymous_summary, ar.confirmed_adult, ar.status,
+      ar.created_at
+     FROM action_responses ar
+     JOIN action_cards a ON a.id = ar.action_id
+     WHERE a.repair_id = ?
+     ORDER BY ar.created_at DESC`,
+  )
+    .bind(repairId)
+    .all<AdminActionResponseRow>();
+  return result.results.map((row) => ({
+    id: row.id,
+    actionId: row.action_id,
+    actionTitle: row.action_title,
+    questions: parseStringList(row.questions),
+    answers: parseStringList(row.answers),
+    consentPrivateUse: Boolean(row.consent_private_use),
+    consentAnonymousSummary: Boolean(row.consent_anonymous_summary),
+    confirmedAdult: Boolean(row.confirmed_adult),
+    status: row.status,
+    createdAt: row.created_at,
+  }));
+}
+
+export async function updateActionResponseStatus(
+  id: string,
+  status: AdminActionResponse['status'],
+): Promise<boolean> {
+  const row = await env.DB.prepare(
+    `SELECT action_id, status AS response_status
+     FROM action_responses WHERE id = ?`,
+  )
+    .bind(id)
+    .first<{
+      action_id: string;
+      response_status: AdminActionResponse['status'];
+    }>();
+  if (!row) return false;
+
+  const updated = await env.DB.prepare(
+    `UPDATE action_responses
+     SET status = ?, updated_at = ?
+     WHERE id = ?
+       AND (
+         ? = 'rejected'
+         OR status != 'rejected'
+         OR (
+           SELECT COUNT(*) FROM action_responses
+           WHERE action_id = ? AND status != 'rejected' AND id != ?
+         ) < (
+           SELECT capacity FROM action_cards WHERE id = ?
+         )
+       )`,
+  )
+    .bind(
+      status,
+      new Date().toISOString(),
+      id,
+      status,
+      row.action_id,
+      id,
+      row.action_id,
+    )
+    .run();
+  if (Number(updated.meta.changes ?? 0) !== 1) return false;
+
+  if (status === 'rejected' && row.response_status !== 'rejected') {
+    await env.DB.prepare(
+      `UPDATE action_cards SET status = 'ready'
+       WHERE id = ? AND participation_mode = 'direct_response'
+         AND status = 'review' AND capacity - 1 = (
+           SELECT COUNT(*) FROM action_responses
+           WHERE action_id = ? AND status != 'rejected'
+         )`,
+    )
+      .bind(row.action_id, row.action_id)
+      .run();
+  } else if (status !== 'rejected' && row.response_status === 'rejected') {
+    await env.DB.prepare(
+      `UPDATE action_cards SET status = 'review'
+       WHERE id = ? AND participation_mode = 'direct_response'
+         AND status IN ('ready', 'offered') AND capacity <= (
+           SELECT COUNT(*) FROM action_responses
+           WHERE action_id = ? AND status != 'rejected'
+         )`,
+    )
+      .bind(row.action_id, row.action_id)
+      .run();
+  }
+  return true;
+}
+
+export async function deleteActionResponse(id: string): Promise<boolean> {
+  const row = await env.DB.prepare(
+    `SELECT action_id, status FROM action_responses WHERE id = ?`,
+  )
+    .bind(id)
+    .first<{
+      action_id: string;
+      status: AdminActionResponse['status'];
+    }>();
+  if (!row) return false;
+
+  const deleted = await env.DB.prepare(
+    `DELETE FROM action_responses WHERE id = ?`,
+  )
+    .bind(id)
+    .run();
+  if (Number(deleted.meta.changes ?? 0) !== 1) return false;
+
+  if (row.status !== 'rejected') {
+    await env.DB.prepare(
+      `UPDATE action_cards SET status = 'ready'
+       WHERE id = ? AND participation_mode = 'direct_response'
+         AND status = 'review' AND capacity - 1 = (
+           SELECT COUNT(*) FROM action_responses
+           WHERE action_id = ? AND status != 'rejected'
+         )`,
+    )
+      .bind(row.action_id, row.action_id)
+      .run();
+  }
+  return true;
 }
 
 export async function createAppeal(input: AppealInput): Promise<string> {
