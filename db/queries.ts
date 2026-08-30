@@ -1,13 +1,26 @@
 import { env } from 'cloudflare:workers';
 
 import { demoBundle } from '@/lib/demo-data';
+import { repairCanPublish, slugFromTitle } from '@/lib/admin-content';
 import {
   createActionInviteToken,
   hashActionInviteToken,
 } from '@/lib/action-invites';
 import { RESERVE_ACTION_INVITE_SQL } from '@/lib/action-invite-sql';
-import { pilotClosingInstant } from '@/lib/pilot-rules';
-import type { PilotApprovalTerms } from '@/lib/public-intake';
+import {
+  pilotClosingDateIsAllowed,
+  pilotClosingInstant,
+} from '@/lib/pilot-rules';
+import {
+  DELETE_DUE_ACTION_RESPONSES_SQL,
+  DUE_ACTION_RESPONSE_PREDICATE,
+  REVOKE_DUE_RESPONSE_INVITES_SQL,
+  STOP_DUE_RESPONSE_ACTIONS_SQL,
+} from '@/lib/response-retention-sql';
+import {
+  getPilotPrivacyConfiguration,
+  type PilotApprovalTerms,
+} from '@/lib/public-intake';
 import type {
   ActionCard,
   ActionOfferInput,
@@ -15,6 +28,10 @@ import type {
   AdminActionResponse,
   AdminAppeal,
   AdminProposal,
+  AdminRepair,
+  AdminRepairBundle,
+  AdminRepairUpdate,
+  AdminRetentionEvent,
   AppealInput,
   Correction,
   Outcome,
@@ -45,6 +62,10 @@ type RepairRow = {
   review_date: string;
   updated_at: string;
   is_demo: number;
+};
+
+type AdminRepairRow = RepairRow & {
+  is_published: number;
 };
 
 type ActionRow = {
@@ -105,6 +126,10 @@ type UpdateRow = {
   published_at: string;
 };
 
+type AdminUpdateRow = UpdateRow & {
+  is_published: number;
+};
+
 type AdminActionResponseRow = {
   id: string;
   action_id: string;
@@ -115,7 +140,17 @@ type AdminActionResponseRow = {
   consent_anonymous_summary: number;
   confirmed_adult: number;
   status: AdminActionResponse['status'];
+  delete_after: string;
   created_at: string;
+};
+
+type RetentionEventRow = {
+  id: string;
+  data_type: string;
+  trigger: AdminRetentionEvent['trigger'];
+  due_date: string;
+  records_deleted: number;
+  completed_at: string;
 };
 
 type AdminActionInviteRow = {
@@ -185,6 +220,10 @@ function mapRepair(row: RepairRow): Repair {
   };
 }
 
+function mapAdminRepair(row: AdminRepairRow): AdminRepair {
+  return { ...mapRepair(row), isPublished: Boolean(row.is_published) };
+}
+
 function mapAction(row: ActionRow): ActionCard {
   return {
     id: row.id,
@@ -250,6 +289,10 @@ function mapUpdate(row: UpdateRow): RepairUpdate {
     nextReviewDate: row.next_review_date,
     publishedAt: row.published_at,
   };
+}
+
+function mapAdminUpdate(row: AdminUpdateRow): AdminRepairUpdate {
+  return { ...mapUpdate(row), isPublished: Boolean(row.is_published) };
 }
 
 function mapStewardBrief(row: StewardRow): StewardBrief {
@@ -381,8 +424,108 @@ export async function getCurrentRepairBundle(): Promise<RepairBundle> {
   );
 }
 
+function demoAdminBundle(): AdminRepairBundle {
+  return {
+    repair: { ...demoBundle.repair, isPublished: true },
+    actions: demoBundle.actions,
+    outcomes: demoBundle.outcomes,
+    updates: demoBundle.updates.map((update) => ({
+      ...update,
+      isPublished: true,
+    })),
+  };
+}
+
+export async function getAdminRepairBundle(
+  repairId: string,
+): Promise<AdminRepairBundle | null> {
+  const row = await env.DB.prepare(
+    `SELECT id, slug, title, summary, stage, scope, affected_groups,
+      known_facts, unknowns, disputed_claims, desired_change, smallest_test,
+      safeguards, owner_name, partner_name, review_date, updated_at, is_demo,
+      is_published
+     FROM repairs WHERE id = ? AND is_demo = 0`,
+  )
+    .bind(repairId)
+    .first<AdminRepairRow>();
+  if (!row) return null;
+
+  const [actions, outcomeRows, updateRows] = await Promise.all([
+    env.DB.prepare(
+      `SELECT id, repair_id, title, intended_output, why_it_matters,
+        time_size, compensation, participation_mode, response_questions,
+        response_path, is_preview, skills_needed, location_mode, owner_name,
+        reviewer_name, pilot_terms_approved_at, pilot_approval_snapshot,
+        capacity, status, evidence_required, review_date, stop_condition,
+        sort_order
+       FROM action_cards WHERE repair_id = ? ORDER BY sort_order, id`,
+    )
+      .bind(row.id)
+      .all<ActionRow>(),
+    env.DB.prepare(
+      `SELECT id, repair_id, title, activity, observed_effect, evidence,
+        evidence_url, confidence, verifier_name, who_benefited,
+        what_did_not_change, learning, published_at, sort_order
+       FROM outcomes WHERE repair_id = ? ORDER BY sort_order, published_at DESC`,
+    )
+      .bind(row.id)
+      .all<OutcomeRow>(),
+    env.DB.prepare(
+      `SELECT id, repair_id, title, body, evidence_changed, remains_unfair,
+        next_owner, next_review_date, published_at, is_published
+       FROM repair_updates WHERE repair_id = ? ORDER BY published_at DESC`,
+    )
+      .bind(row.id)
+      .all<AdminUpdateRow>(),
+  ]);
+
+  return {
+    repair: mapAdminRepair(row),
+    actions: actions.results.map(mapAction),
+    outcomes: outcomeRows.results.map(mapOutcome),
+    updates: updateRows.results.map(mapAdminUpdate),
+  };
+}
+
+export async function getAdminWorkBundle(): Promise<AdminRepairBundle> {
+  try {
+    const row = await env.DB.prepare(
+      `SELECT id FROM repairs
+       WHERE is_demo = 0
+       ORDER BY CASE
+         WHEN is_published = 1 AND EXISTS (
+           SELECT 1 FROM action_cards a
+           WHERE a.repair_id = repairs.id
+             AND a.participation_mode = 'direct_response'
+             AND (
+               a.is_preview = 0
+               OR EXISTS (
+                 SELECT 1 FROM action_responses ar WHERE ar.action_id = a.id
+               )
+               OR EXISTS (
+                 SELECT 1 FROM action_invites ai
+                 WHERE ai.action_id = a.id AND ai.used_at IS NULL
+                   AND ai.revoked_at IS NULL
+                   AND datetime(ai.expires_at) > datetime('now')
+               )
+             )
+         ) THEN 0
+         WHEN is_published = 1 AND stage NOT IN ('closed', 'stopped') THEN 1
+         WHEN is_published = 0 THEN 2
+         ELSE 3
+       END, updated_at DESC
+       LIMIT 1`,
+    ).first<{ id: string }>();
+    if (row) return (await getAdminRepairBundle(row.id)) ?? demoAdminBundle();
+  } catch (error) {
+    databaseError('admin work bundle', error);
+  }
+  return demoAdminBundle();
+}
+
 export async function getHomeRepairBundle(): Promise<RepairBundle> {
   try {
+    await purgeDueActionResponses();
     const row = await env.DB.prepare(
       `SELECT r.slug
        FROM repairs r
@@ -638,6 +781,7 @@ export async function createActionInvites(
     responsePath: string;
   }>
 > {
+  await purgeDueActionResponses();
   const action = await env.DB.prepare(
     `SELECT a.capacity, a.review_date, a.response_path
      FROM action_cards a
@@ -756,6 +900,7 @@ export async function updateActionPreview(
   id: string,
   isPreview: boolean,
 ): Promise<boolean> {
+  await purgeDueActionResponses();
   if (isPreview) {
     const results = await env.DB.batch([
       env.DB.prepare(
@@ -803,6 +948,7 @@ export async function approvePilotActionTerms(
   id: string,
   approvalSnapshot: string,
 ): Promise<boolean> {
+  await purgeDueActionResponses();
   const result = await env.DB.prepare(
     `UPDATE action_cards
      SET pilot_terms_approved_at = ?, pilot_approval_snapshot = ?
@@ -833,6 +979,7 @@ export async function updatePilotActionSettings(
     reviewDate: string;
   },
 ): Promise<boolean> {
+  await purgeDueActionResponses();
   const now = new Date().toISOString();
   const stopCondition =
     'Stop after five replies or on the closing date shown, whichever comes first. Check the five replies. Make a replacement link only if a reply cannot be used. Stop sooner if the page breaks, a question upsets someone or anyone sends private details.';
@@ -936,16 +1083,17 @@ export async function createActionResponse(input: {
   consentPrivateUse: boolean;
   consentAnonymousSummary: boolean;
   confirmedAdult: boolean;
+  deleteAfter: string;
 }): Promise<string | null> {
   const id = `response_${crypto.randomUUID()}`;
   const now = new Date().toISOString();
   const inserted = await env.DB.prepare(
     `INSERT OR IGNORE INTO action_responses (
       id, action_id, invite_id, questions, answers, consent_private_use,
-      consent_anonymous_summary, confirmed_adult, status, created_at,
-      updated_at
+      consent_anonymous_summary, confirmed_adult, status, delete_after,
+      created_at, updated_at
     )
-    SELECT ?, a.id, ai.id, a.response_questions, ?, ?, ?, ?, 'new', ?, ?
+    SELECT ?, a.id, ai.id, a.response_questions, ?, ?, ?, ?, 'new', ?, ?, ?
     FROM action_cards a
     JOIN repairs r ON r.id = a.repair_id
     JOIN action_invites ai ON ai.action_id = a.id
@@ -975,6 +1123,7 @@ export async function createActionResponse(input: {
       input.consentPrivateUse ? 1 : 0,
       input.consentAnonymousSummary ? 1 : 0,
       input.confirmedAdult ? 1 : 0,
+      input.deleteAfter,
       now,
       now,
       input.actionId,
@@ -1005,17 +1154,140 @@ export async function createActionResponse(input: {
   return id;
 }
 
+function mapRetentionEvent(row: RetentionEventRow): AdminRetentionEvent {
+  return {
+    id: row.id,
+    dataType: row.data_type,
+    trigger: row.trigger,
+    dueDate: row.due_date,
+    recordsDeleted: Number(row.records_deleted),
+    completedAt: row.completed_at,
+  };
+}
+
+export async function purgeDueActionResponses(
+  now = new Date(),
+): Promise<AdminRetentionEvent | null> {
+  const completedAt = now.toISOString();
+  const privacy = getPilotPrivacyConfiguration();
+  const policyCutoff = privacy
+    ? pilotClosingInstant(privacy.responseDeleteDate)
+    : null;
+  const policyIsDue = Boolean(
+    policyCutoff && Date.parse(policyCutoff) <= now.getTime(),
+  );
+  const id = `retention_${crypto.randomUUID()}`;
+  const results = await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO retention_events (
+        id, data_type, trigger, due_date, records_deleted, completed_at
+      )
+      SELECT ?1, 'action_responses', 'automatic',
+        COALESCE(?2, MIN(delete_after), 'not-recorded'), COUNT(*), ?3
+      FROM action_responses
+      WHERE ${DUE_ACTION_RESPONSE_PREDICATE.replaceAll('?1', '?3').replaceAll('?2', '?4')}
+      HAVING COUNT(*) > 0`,
+    ).bind(id, policyIsDue ? policyCutoff : null, completedAt, policyCutoff),
+    env.DB.prepare(STOP_DUE_RESPONSE_ACTIONS_SQL).bind(
+      completedAt,
+      policyCutoff,
+    ),
+    env.DB.prepare(REVOKE_DUE_RESPONSE_INVITES_SQL).bind(
+      completedAt,
+      policyCutoff,
+    ),
+    env.DB.prepare(DELETE_DUE_ACTION_RESPONSES_SQL).bind(
+      completedAt,
+      policyCutoff,
+    ),
+  ]);
+  if (Number(results[0]?.meta.changes ?? 0) !== 1) return null;
+  const event = await env.DB.prepare(
+    `SELECT id, data_type, trigger, due_date, records_deleted, completed_at
+     FROM retention_events WHERE id = ?`,
+  )
+    .bind(id)
+    .first<RetentionEventRow>();
+  return event ? mapRetentionEvent(event) : null;
+}
+
+export async function stopAndDeletePilotResponses(
+  repairId: string,
+): Promise<AdminRetentionEvent | null> {
+  const repair = await env.DB.prepare(
+    `SELECT id FROM repairs WHERE id = ? AND is_demo = 0`,
+  )
+    .bind(repairId)
+    .first<{ id: string }>();
+  if (!repair) return null;
+
+  const completedAt = new Date().toISOString();
+  const id = `retention_${crypto.randomUUID()}`;
+  await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO retention_events (
+        id, data_type, trigger, due_date, records_deleted, completed_at
+      )
+      SELECT ?, 'action_responses', 'manual',
+        COALESCE(MIN(ar.delete_after), 'manual'), COUNT(*), ?
+      FROM action_responses ar
+      JOIN action_cards a ON a.id = ar.action_id
+      WHERE a.repair_id = ?`,
+    ).bind(id, completedAt, repairId),
+    env.DB.prepare(
+      `UPDATE action_cards
+       SET status = 'stopped', is_preview = 1,
+         pilot_terms_approved_at = NULL, pilot_approval_snapshot = NULL
+       WHERE repair_id = ? AND participation_mode = 'direct_response'`,
+    ).bind(repairId),
+    env.DB.prepare(
+      `UPDATE action_invites SET revoked_at = COALESCE(revoked_at, ?)
+       WHERE action_id IN (
+         SELECT id FROM action_cards WHERE repair_id = ?
+       )`,
+    ).bind(completedAt, repairId),
+    env.DB.prepare(
+      `DELETE FROM action_responses
+       WHERE action_id IN (
+         SELECT id FROM action_cards WHERE repair_id = ?
+       )`,
+    ).bind(repairId),
+  ]);
+  const event = await env.DB.prepare(
+    `SELECT id, data_type, trigger, due_date, records_deleted, completed_at
+     FROM retention_events WHERE id = ?`,
+  )
+    .bind(id)
+    .first<RetentionEventRow>();
+  return event ? mapRetentionEvent(event) : null;
+}
+
+export async function getAdminRetentionEvents(
+  limit = 20,
+): Promise<AdminRetentionEvent[]> {
+  const result = await env.DB.prepare(
+    `SELECT id, data_type, trigger, due_date, records_deleted, completed_at
+     FROM retention_events ORDER BY completed_at DESC LIMIT ?`,
+  )
+    .bind(limit)
+    .all<RetentionEventRow>();
+  return result.results.map(mapRetentionEvent);
+}
+
 export async function getAdminActionResponses(
   repairId: string,
 ): Promise<AdminActionResponse[]> {
+  await purgeDueActionResponses();
   const result = await env.DB.prepare(
     `SELECT ar.id, ar.action_id, a.title AS action_title,
       ar.questions, ar.answers, ar.consent_private_use,
       ar.consent_anonymous_summary, ar.confirmed_adult, ar.status,
-      ar.created_at
+      ar.delete_after, ar.created_at
      FROM action_responses ar
      JOIN action_cards a ON a.id = ar.action_id
      WHERE a.repair_id = ?
+       AND ar.delete_after IS NOT NULL
+       AND datetime(ar.delete_after) > datetime('now')
      ORDER BY ar.created_at DESC`,
   )
     .bind(repairId)
@@ -1030,6 +1302,7 @@ export async function getAdminActionResponses(
     consentAnonymousSummary: Boolean(row.consent_anonymous_summary),
     confirmedAdult: Boolean(row.confirmed_adult),
     status: row.status,
+    deleteAfter: row.delete_after,
     createdAt: row.created_at,
   }));
 }
@@ -1038,6 +1311,7 @@ export async function updateActionResponseStatus(
   id: string,
   status: AdminActionResponse['status'],
 ): Promise<boolean> {
+  await purgeDueActionResponses();
   const row = await env.DB.prepare(
     `SELECT action_id, status AS response_status
      FROM action_responses WHERE id = ?`,
@@ -1103,6 +1377,7 @@ export async function updateActionResponseStatus(
 }
 
 export async function deleteActionResponse(id: string): Promise<boolean> {
+  await purgeDueActionResponses();
   const row = await env.DB.prepare(
     `SELECT action_id, status FROM action_responses WHERE id = ?`,
   )
@@ -1245,6 +1520,347 @@ export async function updateAppealStatus(
     .run();
 }
 
+export async function createRepairDraft(input: {
+  title: string;
+  summary: string;
+}): Promise<string | null> {
+  const uuid = crypto.randomUUID();
+  const id = `repair_${uuid}`;
+  const slug = `${slugFromTitle(input.title)}-${uuid.slice(0, 8)}`;
+  const now = new Date();
+  const reviewDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1_000)
+    .toISOString()
+    .slice(0, 10);
+  const inserted = await env.DB.prepare(
+    `INSERT INTO repairs (
+      id, slug, title, summary, stage, scope, affected_groups, known_facts,
+      unknowns, disputed_claims, desired_change, smallest_test, safeguards,
+      owner_name, partner_name, review_date, updated_at, is_demo, is_published
+    )
+    SELECT ?, ?, ?, ?, 'framing', '', '', '', '', '', '', '', '', '',
+      NULL, ?, ?, 0, 0
+    WHERE NOT EXISTS (
+      SELECT 1 FROM repairs WHERE is_demo = 0 AND is_published = 0
+    )
+      AND NOT EXISTS (
+        SELECT 1 FROM repairs r
+        WHERE r.is_demo = 0 AND r.is_published = 1
+          AND (
+            r.stage NOT IN ('closed', 'stopped')
+            OR EXISTS (
+              SELECT 1 FROM action_cards a
+              WHERE a.repair_id = r.id
+                AND a.participation_mode = 'direct_response'
+                AND (
+                  a.is_preview = 0
+                  OR EXISTS (
+                    SELECT 1 FROM action_responses ar
+                    WHERE ar.action_id = a.id
+                  )
+                  OR EXISTS (
+                    SELECT 1 FROM action_invites ai
+                    WHERE ai.action_id = a.id AND ai.used_at IS NULL
+                      AND ai.revoked_at IS NULL
+                      AND datetime(ai.expires_at) > datetime('now')
+                  )
+                )
+            )
+          )
+      )`,
+  )
+    .bind(id, slug, input.title, input.summary, reviewDate, now.toISOString())
+    .run();
+  return Number(inserted.meta.changes ?? 0) === 1 ? id : null;
+}
+
+export async function updateRepairDraftProblem(
+  id: string,
+  input: {
+    title: string;
+    summary: string;
+    scope: string;
+    affectedGroups: string;
+    knownFacts: string;
+    unknowns: string;
+    disputedClaims: string;
+  },
+): Promise<boolean> {
+  const result = await env.DB.prepare(
+    `UPDATE repairs SET title = ?, summary = ?, scope = ?,
+      affected_groups = ?, known_facts = ?, unknowns = ?,
+      disputed_claims = ?, updated_at = ?
+     WHERE id = ? AND is_demo = 0 AND is_published = 0`,
+  )
+    .bind(
+      input.title,
+      input.summary,
+      input.scope,
+      input.affectedGroups,
+      input.knownFacts,
+      input.unknowns,
+      input.disputedClaims,
+      new Date().toISOString(),
+      id,
+    )
+    .run();
+  return Number(result.meta.changes ?? 0) === 1;
+}
+
+export async function updateRepairDraftChange(
+  id: string,
+  input: { desiredChange: string; smallestTest: string },
+): Promise<boolean> {
+  const result = await env.DB.prepare(
+    `UPDATE repairs SET desired_change = ?, smallest_test = ?, updated_at = ?
+     WHERE id = ? AND is_demo = 0 AND is_published = 0`,
+  )
+    .bind(input.desiredChange, input.smallestTest, new Date().toISOString(), id)
+    .run();
+  return Number(result.meta.changes ?? 0) === 1;
+}
+
+export async function updateRepairDraftGuard(
+  id: string,
+  input: {
+    safeguards: string;
+    ownerName: string;
+    partnerName: string;
+    reviewDate: string;
+  },
+): Promise<boolean> {
+  const result = await env.DB.prepare(
+    `UPDATE repairs SET safeguards = ?, owner_name = ?, partner_name = ?,
+      review_date = ?, updated_at = ?
+     WHERE id = ? AND is_demo = 0 AND is_published = 0`,
+  )
+    .bind(
+      input.safeguards,
+      input.ownerName,
+      input.partnerName,
+      input.reviewDate,
+      new Date().toISOString(),
+      id,
+    )
+    .run();
+  return Number(result.meta.changes ?? 0) === 1;
+}
+
+export async function createInitialActionDraft(
+  repairId: string,
+): Promise<string | null> {
+  const id = `action_${crypto.randomUUID()}`;
+  const result = await env.DB.prepare(
+    `INSERT INTO action_cards (
+      id, repair_id, title, intended_output, why_it_matters, time_size,
+      compensation, participation_mode, response_questions, response_path,
+      is_preview, skills_needed, location_mode, owner_name, reviewer_name,
+      capacity, status, evidence_required, review_date, stop_condition,
+      sort_order
+    )
+    SELECT ?, r.id, '', '', '', '', 'Pay not set — job cannot open',
+      'offer', '[]', NULL, 0, '', '', '', '', 1, 'stopped', '', r.review_date,
+      '', 1
+    FROM repairs r
+    WHERE r.id = ? AND r.is_demo = 0 AND r.is_published = 0
+      AND NOT EXISTS (
+        SELECT 1 FROM action_cards a WHERE a.repair_id = r.id
+      )`,
+  )
+    .bind(id, repairId)
+    .run();
+  return Number(result.meta.changes ?? 0) === 1 ? id : null;
+}
+
+export async function updateInitialActionDraftBasics(
+  id: string,
+  input: {
+    title: string;
+    intendedOutput: string;
+    whyItMatters: string;
+    timeSize: string;
+    compensation: string;
+  },
+): Promise<boolean> {
+  const result = await env.DB.prepare(
+    `UPDATE action_cards SET title = ?, intended_output = ?,
+      why_it_matters = ?, time_size = ?, compensation = ?
+     WHERE id = ? AND participation_mode = 'offer'
+       AND repair_id IN (
+         SELECT id FROM repairs WHERE is_demo = 0 AND is_published = 0
+       )`,
+  )
+    .bind(
+      input.title,
+      input.intendedOutput,
+      input.whyItMatters,
+      input.timeSize,
+      input.compensation,
+      id,
+    )
+    .run();
+  return Number(result.meta.changes ?? 0) === 1;
+}
+
+export async function updateInitialActionDraftGuard(
+  id: string,
+  input: {
+    skillsNeeded: string;
+    locationMode: string;
+    ownerName: string;
+    reviewerName: string;
+    capacity: number;
+    evidenceRequired: string;
+    reviewDate: string;
+    stopCondition: string;
+  },
+): Promise<boolean> {
+  const result = await env.DB.prepare(
+    `UPDATE action_cards SET skills_needed = ?, location_mode = ?,
+      owner_name = ?, reviewer_name = ?, capacity = ?, evidence_required = ?,
+      review_date = ?, stop_condition = ?
+     WHERE id = ? AND participation_mode = 'offer'
+       AND repair_id IN (
+         SELECT id FROM repairs WHERE is_demo = 0 AND is_published = 0
+       )
+       AND date(?) <= (
+         SELECT date(review_date) FROM repairs
+         WHERE id = action_cards.repair_id AND is_published = 0
+       )`,
+  )
+    .bind(
+      input.skillsNeeded,
+      input.locationMode,
+      input.ownerName,
+      input.reviewerName,
+      input.capacity,
+      input.evidenceRequired,
+      input.reviewDate,
+      input.stopCondition,
+      id,
+      input.reviewDate,
+    )
+    .run();
+  return Number(result.meta.changes ?? 0) === 1;
+}
+
+export async function publishRepairDraft(id: string): Promise<boolean> {
+  const bundle = await getAdminRepairBundle(id);
+  const action = bundle?.actions[0];
+  if (
+    !bundle ||
+    !action ||
+    !repairCanPublish(bundle.repair, bundle.actions) ||
+    !pilotClosingDateIsAllowed(bundle.repair.reviewDate) ||
+    !pilotClosingDateIsAllowed(action.reviewDate) ||
+    action.reviewDate > bundle.repair.reviewDate
+  ) {
+    return false;
+  }
+  const result = await env.DB.prepare(
+    `UPDATE repairs SET is_published = 1, stage = 'acting', updated_at = ?
+     WHERE id = ? AND is_demo = 0 AND is_published = 0`,
+  )
+    .bind(new Date().toISOString(), id)
+    .run();
+  return Number(result.meta.changes ?? 0) === 1;
+}
+
+export async function createRepairUpdateDraft(input: {
+  repairId: string;
+  title: string;
+  body: string;
+  evidenceChanged: string;
+  remainsUnfair: string;
+  nextOwner: string;
+  nextReviewDate: string;
+}): Promise<string | null> {
+  const id = `update_${crypto.randomUUID()}`;
+  const result = await env.DB.prepare(
+    `INSERT INTO repair_updates (
+      id, repair_id, title, body, evidence_changed, remains_unfair,
+      next_owner, next_review_date, published_at, is_published
+    )
+    SELECT ?, r.id, ?, ?, ?, ?, ?, ?, ?, 0
+    FROM repairs r
+    WHERE r.id = ? AND r.is_demo = 0 AND r.is_published = 1
+      AND NOT EXISTS (
+        SELECT 1 FROM repair_updates u
+        WHERE u.repair_id = r.id AND u.is_published = 0
+      )`,
+  )
+    .bind(
+      id,
+      input.title,
+      input.body,
+      input.evidenceChanged,
+      input.remainsUnfair,
+      input.nextOwner,
+      input.nextReviewDate,
+      new Date().toISOString(),
+      input.repairId,
+    )
+    .run();
+  return Number(result.meta.changes ?? 0) === 1 ? id : null;
+}
+
+export async function updateRepairUpdateDraft(
+  id: string,
+  input: {
+    title: string;
+    body: string;
+    evidenceChanged: string;
+    remainsUnfair: string;
+    nextOwner: string;
+    nextReviewDate: string;
+  },
+): Promise<boolean> {
+  const result = await env.DB.prepare(
+    `UPDATE repair_updates SET title = ?, body = ?, evidence_changed = ?,
+      remains_unfair = ?, next_owner = ?, next_review_date = ?
+     WHERE id = ? AND is_published = 0
+       AND repair_id IN (
+         SELECT id FROM repairs WHERE is_demo = 0 AND is_published = 1
+       )`,
+  )
+    .bind(
+      input.title,
+      input.body,
+      input.evidenceChanged,
+      input.remainsUnfair,
+      input.nextOwner,
+      input.nextReviewDate,
+      id,
+    )
+    .run();
+  return Number(result.meta.changes ?? 0) === 1;
+}
+
+export async function publishRepairUpdateDraft(id: string): Promise<boolean> {
+  const row = await env.DB.prepare(
+    `SELECT repair_id, next_review_date FROM repair_updates
+     WHERE id = ? AND is_published = 0`,
+  )
+    .bind(id)
+    .first<{ repair_id: string; next_review_date: string }>();
+  if (!row) return false;
+  if (!pilotClosingDateIsAllowed(row.next_review_date)) return false;
+  const now = new Date().toISOString();
+  const results = await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE repair_updates SET is_published = 1, published_at = ?
+       WHERE id = ? AND is_published = 0`,
+    ).bind(now, id),
+    env.DB.prepare(
+      `UPDATE repairs SET review_date = ?, updated_at = ?
+       WHERE id = ? AND is_published = 1 AND is_demo = 0`,
+    ).bind(row.next_review_date, now, row.repair_id),
+  ]);
+  return (
+    Number(results[0]?.meta.changes ?? 0) === 1 &&
+    Number(results[1]?.meta.changes ?? 0) === 1
+  );
+}
+
 export async function updateRepairStage(
   id: string,
   stage: string,
@@ -1255,6 +1871,9 @@ export async function updateRepairStage(
       env.DB.prepare(
         `UPDATE repairs SET stage = ?, updated_at = ? WHERE id = ?`,
       ).bind(stage, now, id),
+      env.DB.prepare(
+        `UPDATE action_cards SET status = 'stopped' WHERE repair_id = ?`,
+      ).bind(id),
       env.DB.prepare(
         `UPDATE action_cards
          SET is_preview = 1, pilot_terms_approved_at = NULL,
@@ -1288,9 +1907,20 @@ export async function updateActionStatus(
 ): Promise<boolean> {
   const result = await env.DB.prepare(
     `UPDATE action_cards SET status = ?
-     WHERE id = ? AND participation_mode != 'direct_response'`,
+     WHERE id = ? AND participation_mode != 'direct_response'
+       AND (
+         ? NOT IN ('ready', 'offered')
+         OR (
+           compensation != 'Pay not set — job cannot open'
+           AND date(review_date) >= date('now')
+           AND repair_id IN (
+             SELECT id FROM repairs
+             WHERE is_published = 1 AND stage NOT IN ('closed', 'stopped')
+           )
+         )
+       )`,
   )
-    .bind(status, id)
+    .bind(status, id, status)
     .run();
   return Number(result.meta.changes ?? 0) === 1;
 }

@@ -1,0 +1,1 @@
+CREATE INDEX `idx_action_responses_delete_after` ON `action_responses` (`delete_after`);

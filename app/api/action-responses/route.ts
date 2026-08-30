@@ -2,12 +2,17 @@ import {
   createActionResponse,
   getDirectActionTask,
   getPilotActionSettings,
+  purgeDueActionResponses,
 } from '@/db/queries';
 import {
   actionInviteTokenLooksValid,
   hashActionInviteToken,
 } from '@/lib/action-invites';
-import { pilotRuntimeIsReady } from '@/lib/public-intake';
+import { pilotClosingInstant } from '@/lib/pilot-rules';
+import {
+  getPilotPrivacyConfiguration,
+  pilotRuntimeIsReady,
+} from '@/lib/public-intake';
 import { allowRequest } from '@/lib/rate-limit';
 import {
   booleanField,
@@ -19,6 +24,7 @@ import {
 
 export async function POST(request: Request) {
   try {
+    await purgeDueActionResponses();
     const body = await readJsonObject(request, 12_000);
     if (
       stringField(body.companyWebsite, 'companyWebsite', { optional: true })
@@ -50,9 +56,15 @@ export async function POST(request: Request) {
       getDirectActionTask(actionId),
       getPilotActionSettings(actionId),
     ]);
+    const privacy = getPilotPrivacyConfiguration();
+    const deleteAfter = privacy
+      ? pilotClosingInstant(privacy.responseDeleteDate)
+      : null;
     if (
       !task ||
       !settings ||
+      !deleteAfter ||
+      new Date(deleteAfter).getTime() <= Date.now() ||
       task.questions.length === 0 ||
       !pilotRuntimeIsReady(settings)
     ) {
@@ -97,6 +109,7 @@ export async function POST(request: Request) {
       consentPrivateUse: true,
       consentAnonymousSummary: booleanField(body.consentAnonymousSummary),
       confirmedAdult: true,
+      deleteAfter,
     });
     if (!reference) {
       throw new RequestValidationError(

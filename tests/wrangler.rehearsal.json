@@ -1,0 +1,25 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "coding-for-justice-rehearsal",
+  "main": "../dist/server/index.js",
+  "compatibility_date": "2026-08-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "no_bundle": true,
+  "rules": [
+    {
+      "type": "ESModule",
+      "globs": ["**/*.js", "**/*.mjs"]
+    }
+  ],
+  "assets": {
+    "directory": "../dist/client"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "coding-for-justice-rehearsal",
+      "database_id": "00000000-0000-4000-8000-000000000001",
+      "migrations_dir": "../drizzle"
+    }
+  ]
+}

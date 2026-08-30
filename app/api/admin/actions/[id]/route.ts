@@ -1,6 +1,8 @@
 import {
   approvePilotActionTerms,
   getPilotActionSettings,
+  updateInitialActionDraftBasics,
+  updateInitialActionDraftGuard,
   updateActionPreview,
   updateActionStatus,
   updatePilotActionSettings,
@@ -41,7 +43,97 @@ export async function PATCH(
     if (!(await getAdminUser()))
       return Response.json({ ok: false }, { status: 403 });
     const { id } = await params;
-    const body = await readJsonObject(request, 2_000);
+    const body = await readJsonObject(request, 16_000);
+    if (body.operation === 'draft-basics') {
+      const compensation = stringField(body.compensation, 'compensation', {
+        minimum: 10,
+        maximum: 240,
+      })!;
+      if (compensation === 'Pay not set — job cannot open') {
+        throw new RequestValidationError(
+          'Say plainly whether the job is paid, expenses-only or unpaid.',
+        );
+      }
+      const changed = await updateInitialActionDraftBasics(id, {
+        title: stringField(body.title, 'title', { minimum: 5, maximum: 160 })!,
+        intendedOutput: stringField(body.intendedOutput, 'intendedOutput', {
+          minimum: 10,
+          maximum: 1_000,
+        })!,
+        whyItMatters: stringField(body.whyItMatters, 'whyItMatters', {
+          minimum: 10,
+          maximum: 1_000,
+        })!,
+        timeSize: stringField(body.timeSize, 'timeSize', {
+          minimum: 2,
+          maximum: 80,
+        })!,
+        compensation,
+      });
+      if (!changed) {
+        throw new RequestValidationError(
+          'This private job was not found, its repair is public, or its check date is after the repair check date.',
+          {},
+          409,
+        );
+      }
+      return Response.json({ ok: true });
+    }
+    if (body.operation === 'draft-guard') {
+      const capacity = Number(body.capacity);
+      if (!Number.isInteger(capacity) || capacity < 1 || capacity > 10) {
+        throw new RequestValidationError('Capacity must be from 1 to 10.');
+      }
+      const reviewDate = stringField(body.reviewDate, 'reviewDate', {
+        minimum: 10,
+        maximum: 10,
+      })!;
+      if (!pilotClosingDateIsAllowed(reviewDate)) {
+        throw new RequestValidationError(
+          'Use a real review date from 7 to 90 calendar days away.',
+        );
+      }
+      const changed = await updateInitialActionDraftGuard(id, {
+        skillsNeeded: stringField(body.skillsNeeded, 'skillsNeeded', {
+          minimum: 2,
+          maximum: 500,
+        })!,
+        locationMode: stringField(body.locationMode, 'locationMode', {
+          minimum: 2,
+          maximum: 240,
+        })!,
+        ownerName: stringField(body.ownerName, 'ownerName', {
+          minimum: 2,
+          maximum: 120,
+        })!,
+        reviewerName: stringField(body.reviewerName, 'reviewerName', {
+          minimum: 2,
+          maximum: 120,
+        })!,
+        capacity,
+        evidenceRequired: stringField(
+          body.evidenceRequired,
+          'evidenceRequired',
+          {
+            minimum: 10,
+            maximum: 1_000,
+          },
+        )!,
+        reviewDate,
+        stopCondition: stringField(body.stopCondition, 'stopCondition', {
+          minimum: 10,
+          maximum: 1_000,
+        })!,
+      });
+      if (!changed) {
+        throw new RequestValidationError(
+          'This private job draft was not found or its repair is already public.',
+          {},
+          409,
+        );
+      }
+      return Response.json({ ok: true });
+    }
     if (body.operation === 'pilot-settings') {
       const compensation = stringField(body.compensation, 'compensation', {
         minimum: 10,

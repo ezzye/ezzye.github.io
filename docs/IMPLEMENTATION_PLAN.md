@@ -10,6 +10,17 @@
   contact and an explicit intake setting are present.
 - Done: the first test uses action-bound, expiring, one-use links. Only scrambled
   link values are stored.
+- Done: a throw-away local-database rehearsal proved that the protected
+  workshop can hold one private repair draft, build one bounded first job, keep
+  that job stopped when the repair is published, and hold one weekly update
+  privately until a separate publish choice.
+- Done: full test replies carry a non-extendable deletion deadline. Overdue
+  replies fail closed, the next site request tries to erase them, and the owner
+  can stop the reply job and erase every full reply early. The retained deletion
+  proof contains counts and dates, not answers.
+- Not proved: no partner-backed repair has run and no fairness outcome has been
+  achieved. The rehearsal proves maintenance machinery, not social impact or
+  readiness for public launch.
 - Next: the owner must complete and approve the choices in
   [LAUNCH_DECISIONS.md](LAUNCH_DECISIONS.md). Until then the real test stays
   locked.
@@ -53,6 +64,9 @@ The site succeeds when one partner-backed repair is adopted, deliberately change
 - An explicit administrator email allowlist configured in hosting.
 - Proposal and appeal triage.
 - Repair and action state updates.
+- A one-thing-at-a-time editor for a private repair frame, its first stopped job
+  and one private weekly update, with every public field shown before human
+  publish checks.
 - Human-reviewed outcome publication.
 - A finish queue that reduces the current repair to one bounded next action.
 - An optional DeepSeek Flash steward that drafts a weekly brief from public
@@ -143,6 +157,11 @@ Do not replace the fictional repair with a real one until all are true:
 - The finish queue always names one next output, time-box, evidence requirement
   and stop condition; model-assisted briefs are visibly drafts.
 - Every action has an owner, evidence requirement, review date and stop condition.
+- A private repair and its first job do not appear in public reads before
+  publication; publishing the repair leaves that job stopped.
+- Only one active repair, one unfinished repair draft and one unfinished update
+  draft are allowed. An update stays private until its own human-reviewed
+  publish choice.
 - Every outcome states what changed, what did not and the confidence level.
 - No engagement ranking, public comments or private-data exposure exists.
 - Build, keyboard, reflow, contrast, HTTPS, security-header and legacy-route checks pass before cutover.

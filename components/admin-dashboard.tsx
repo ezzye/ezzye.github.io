@@ -5,6 +5,7 @@ import { useState, type SyntheticEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MaintainerPanel } from '@/components/maintainer-panel';
 import {
   NativeSelect,
   NativeSelectOption,
@@ -16,6 +17,9 @@ import type {
   AdminActionResponse,
   AdminAppeal,
   AdminProposal,
+  AdminRepair,
+  AdminRepairUpdate,
+  AdminRetentionEvent,
   Repair,
   StewardBrief,
 } from '@/lib/types';
@@ -33,7 +37,7 @@ const idleState: MutationState = { kind: 'idle', message: '' };
 
 async function sendMutation(
   url: string,
-  method: 'PATCH' | 'POST',
+  method: 'PATCH' | 'POST' | 'DELETE',
   body: unknown,
 ) {
   const response = await fetch(url, {
@@ -153,6 +157,63 @@ function DeleteResponseButton({ responseId }: { responseId: string }) {
         disabled={state.kind === 'sending'}
       >
         Delete full reply
+      </Button>
+      <span
+        className={state.kind === 'error' ? 'admin-error' : ''}
+        aria-live="polite"
+      >
+        {state.message}
+      </span>
+    </div>
+  );
+}
+
+function StopAndDeletePilotButton({
+  repairId,
+  replyCount,
+}: {
+  repairId: string;
+  replyCount: number;
+}) {
+  const router = useRouter();
+  const [state, setState] = useState<MutationState>(idleState);
+
+  async function removeAll() {
+    if (
+      !window.confirm(
+        `Stop this test and permanently delete all ${replyCount} full replies? Invitation links will be revoked. This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setState({ kind: 'sending', message: 'Stopping and deleting…' });
+    try {
+      await sendMutation('/api/admin/action-responses', 'DELETE', {
+        repairId,
+      });
+      setState({
+        kind: 'success',
+        message:
+          'Test stopped. Full replies deleted and invitation links revoked.',
+      });
+      router.refresh();
+    } catch (error) {
+      setState({
+        kind: 'error',
+        message: error instanceof Error ? error.message : 'Failed.',
+      });
+    }
+  }
+
+  return (
+    <div className="admin-delete-row">
+      <Button
+        type="button"
+        variant="destructive"
+        onClick={removeAll}
+        disabled={state.kind === 'sending'}
+      >
+        Stop reply job and delete every full reply
       </Button>
       <span
         className={state.kind === 'error' ? 'admin-error' : ''}
@@ -958,6 +1019,8 @@ export function AdminDashboard({
   actions,
   actionInvites,
   actionResponses,
+  retentionEvents,
+  updates,
   proposals,
   appeals,
   stewardBriefs,
@@ -969,10 +1032,12 @@ export function AdminDashboard({
   pilotTermsApproved,
   publicIntakeOpen,
 }: {
-  repair: Repair;
+  repair: AdminRepair;
   actions: ActionCard[];
   actionInvites: AdminActionInvite[];
   actionResponses: AdminActionResponse[];
+  retentionEvents: AdminRetentionEvent[];
+  updates: AdminRepairUpdate[];
   proposals: AdminProposal[];
   appeals: AdminAppeal[];
   stewardBriefs: StewardBrief[];
@@ -984,106 +1049,166 @@ export function AdminDashboard({
   pilotTermsApproved: boolean;
   publicIntakeOpen: boolean;
 }) {
+  const pilotNeedsAttention =
+    actionResponses.length > 0 ||
+    actionInvites.some(
+      (invite) => !invite.usedAt && !invite.revokedAt && !invite.isExpired,
+    ) ||
+    actions.some(
+      (action) =>
+        action.participationMode === 'direct_response' && !action.isPreview,
+    );
   return (
     <div className="admin-dashboard">
-      <PilotControls
+      <MaintainerPanel
+        repair={repair}
         actions={actions}
-        invites={actionInvites}
-        publicContactEmail={publicContactEmail}
-        pilotPrivacy={pilotPrivacy}
-        pilotPrivacyReady={pilotPrivacyReady}
-        pilotInviteAuthorization={pilotInviteAuthorization}
-        pilotInvitesAuthorized={pilotInvitesAuthorized}
-        pilotTermsApproved={pilotTermsApproved}
-        publicIntakeOpen={publicIntakeOpen}
+        updates={updates}
+        pilotNeedsAttention={pilotNeedsAttention}
       />
-      <StewardPanel repair={repair} actions={actions} briefs={stewardBriefs} />
-      <section>
-        <h2>Current repair</h2>
-        <article className="admin-item">
-          <p className="mini-label">{repair.id}</p>
-          <h3>{repair.title}</h3>
-          <StatusEditor
-            url={`/api/admin/repairs/${repair.id}`}
-            field="stage"
-            value={repair.stage}
-            options={[
-              'listening',
-              'framing',
-              'acting',
-              'checking',
-              'closed',
-              'stopped',
-            ]}
+      {repair.isPublished && (
+        <>
+          <PilotControls
+            actions={actions}
+            invites={actionInvites}
+            publicContactEmail={publicContactEmail}
+            pilotPrivacy={pilotPrivacy}
+            pilotPrivacyReady={pilotPrivacyReady}
+            pilotInviteAuthorization={pilotInviteAuthorization}
+            pilotInvitesAuthorized={pilotInvitesAuthorized}
+            pilotTermsApproved={pilotTermsApproved}
+            publicIntakeOpen={publicIntakeOpen}
           />
-        </article>
-        <div className="admin-list">
-          {actions.map((action) => (
-            <article className="admin-item" key={action.id}>
-              <p className="mini-label">{action.id}</p>
-              <h3>{action.title}</h3>
-              <StatusEditor
-                url={`/api/admin/actions/${action.id}`}
-                field="status"
-                value={action.status}
-                options={[
-                  'ready',
-                  'offered',
-                  'assigned',
-                  'doing',
-                  'review',
-                  'verified',
-                  'blocked',
-                  'stopped',
-                ]}
-              />
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <h2>Job replies</h2>
-        {actionResponses.length === 0 ? (
-          <p className="empty-ledger">No replies to the current job.</p>
-        ) : (
+          <StewardPanel
+            repair={repair}
+            actions={actions}
+            briefs={stewardBriefs}
+          />
+        </>
+      )}
+      {repair.isPublished && (
+        <section>
+          <h2>Current repair</h2>
+          <article className="admin-item">
+            <p className="mini-label">{repair.id}</p>
+            <h3>{repair.title}</h3>
+            <StatusEditor
+              url={`/api/admin/repairs/${repair.id}`}
+              field="stage"
+              value={repair.stage}
+              options={[
+                'listening',
+                'framing',
+                'acting',
+                'checking',
+                'closed',
+                'stopped',
+              ]}
+            />
+          </article>
           <div className="admin-list">
-            {actionResponses.map((response) => (
-              <article className="admin-item" key={response.id}>
-                <p className="mini-label">
-                  {response.id} · {response.status} ·{' '}
-                  {new Date(response.createdAt).toLocaleString('en-GB')}
-                </p>
-                <h3>{response.actionTitle}</h3>
-                <ol className="admin-response-list">
-                  {response.questions.map((question, index) => (
-                    <li key={question}>
-                      <strong>{question}</strong>
-                      <p>{response.answers[index]}</p>
-                    </li>
-                  ))}
-                </ol>
-                <p>
-                  Private test consent:{' '}
-                  {response.consentPrivateUse ? 'yes' : 'no'} · Adult confirmed:{' '}
-                  {response.confirmedAdult ? 'yes' : 'no'}
-                </p>
-                <p>
-                  Nameless public totals allowed:{' '}
-                  {response.consentAnonymousSummary ? 'yes' : 'no'}
-                </p>
+            {actions.map((action) => (
+              <article className="admin-item" key={action.id}>
+                <p className="mini-label">{action.id}</p>
+                <h3>{action.title}</h3>
                 <StatusEditor
-                  url={`/api/admin/action-responses/${response.id}`}
+                  url={`/api/admin/actions/${action.id}`}
                   field="status"
-                  value={response.status}
-                  options={['new', 'reviewed', 'rejected']}
+                  value={action.status}
+                  options={[
+                    'ready',
+                    'offered',
+                    'assigned',
+                    'doing',
+                    'review',
+                    'verified',
+                    'blocked',
+                    'stopped',
+                  ]}
                 />
-                <DeleteResponseButton responseId={response.id} />
               </article>
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
+
+      {repair.isPublished && (
+        <section>
+          <h2>Job replies</h2>
+          <p>
+            Every full reply has its own erase-after time. Overdue replies are
+            hidden before this page loads and the site then tries to erase them.
+            The deletion log below stores only a count and dates, never answers.
+          </p>
+          {actionResponses.length > 0 && (
+            <StopAndDeletePilotButton
+              repairId={repair.id}
+              replyCount={actionResponses.length}
+            />
+          )}
+          {actionResponses.length === 0 ? (
+            <p className="empty-ledger">No replies to the current job.</p>
+          ) : (
+            <div className="admin-list">
+              {actionResponses.map((response) => (
+                <article className="admin-item" key={response.id}>
+                  <p className="mini-label">
+                    {response.id} · {response.status} ·{' '}
+                    {new Date(response.createdAt).toLocaleString('en-GB')}
+                  </p>
+                  <h3>{response.actionTitle}</h3>
+                  <ol className="admin-response-list">
+                    {response.questions.map((question, index) => (
+                      <li key={question}>
+                        <strong>{question}</strong>
+                        <p>{response.answers[index]}</p>
+                      </li>
+                    ))}
+                  </ol>
+                  <p>
+                    Private test consent:{' '}
+                    {response.consentPrivateUse ? 'yes' : 'no'} · Adult
+                    confirmed: {response.confirmedAdult ? 'yes' : 'no'}
+                  </p>
+                  <p>
+                    Nameless public totals allowed:{' '}
+                    {response.consentAnonymousSummary ? 'yes' : 'no'}
+                  </p>
+                  <p>
+                    Full answer hidden and due to be erased after:{' '}
+                    {new Date(response.deleteAfter).toLocaleString('en-GB')}
+                  </p>
+                  <StatusEditor
+                    url={`/api/admin/action-responses/${response.id}`}
+                    field="status"
+                    value={response.status}
+                    options={['new', 'reviewed', 'rejected']}
+                  />
+                  <DeleteResponseButton responseId={response.id} />
+                </article>
+              ))}
+            </div>
+          )}
+          {retentionEvents.length > 0 && (
+            <details>
+              <summary>Deletion proof</summary>
+              <ul className="admin-response-list">
+                {retentionEvents.map((event) => (
+                  <li key={event.id}>
+                    {event.recordsDeleted} full repl
+                    {event.recordsDeleted === 1 ? 'y' : 'ies'} deleted{' '}
+                    {event.trigger === 'automatic'
+                      ? 'by the site'
+                      : 'by the owner'}{' '}
+                    on {new Date(event.completedAt).toLocaleString('en-GB')}.
+                    Deadline: {event.dueDate}.
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </section>
+      )}
 
       <section>
         <h2>Private proposals</h2>
@@ -1168,14 +1293,16 @@ export function AdminDashboard({
         )}
       </section>
 
-      <section>
-        <h2>Publish a reviewed outcome</h2>
-        <p className="admin-warning">
-          This action is immediately public. Verify consent, evidence,
-          confidence level and identifying detail before submitting.
-        </p>
-        <OutcomePublisher repairId={repair.id} />
-      </section>
+      {repair.isPublished && (
+        <section>
+          <h2>Publish a reviewed outcome</h2>
+          <p className="admin-warning">
+            This action is immediately public. Verify consent, evidence,
+            confidence level and identifying detail before submitting.
+          </p>
+          <OutcomePublisher repairId={repair.id} />
+        </section>
+      )}
     </div>
   );
 }

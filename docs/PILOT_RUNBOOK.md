@@ -8,6 +8,30 @@ hosted Site owner-only and leave the real forms locked.
 
 Record every human choice in [LAUNCH_DECISIONS.md](LAUNCH_DECISIONS.md).
 
+## Maintenance rehearsal — complete with fake local data
+
+The automated rehearsal used invented words and a throw-away local database.
+That database was removed afterwards. Do not create a fake repair in the hosted
+database: it could become visible at a later public cutover and repair deletion
+is not yet provided.
+
+The rehearsal proved that the real protected routes:
+
+1. refuse an unsigned workshop request;
+2. start one private repair and refuse a second unfinished repair;
+3. save the problem, fairer change, safety, owner, checker and review date;
+4. make one bounded first job with pay, proof and a stop rule;
+5. refuse publication while anything required is missing;
+6. keep the repair and job out of public reads until the human publish checks;
+7. publish the repair while leaving its first job stopped;
+8. keep one weekly update private, refuse a second draft, then publish it after
+   its own checks; and
+9. stop all child jobs when the repair stops.
+
+A pass proves the private/save/publish gates work. It does not authorise
+invitations, hosted content publication, public access, outreach or a claim that
+anything has been repaired.
+
 ## Future five-person test — not authorised yet
 
 If the owner later approves it, five fresh people will check one page. We will
@@ -100,8 +124,14 @@ when the page is bad.
    If too few people gave permission, say that without giving their answers.
 6. Publish that exact Repair Receipt only after the owner gives and records a
    separate publication approval.
-7. Delete full replies on the date promised in the privacy notice. Keep only
-   the agreed nameless result.
+7. Once the allowed nameless result is ready, use the protected workshop to
+   stop the reply job and delete all full replies immediately. The date in the
+   privacy notice is the latest permitted date, not a reason to keep replies.
+8. Check the content-free deletion proof. It stores only how many replies were
+   erased and when. Without a scheduled worker, physical deletion at the exact
+   wall-clock instant cannot be promised: overdue replies are hidden and the
+   next site request tries to erase them.
+9. Keep only the separately agreed nameless result.
 
 ## Future invitation words — not authorised yet
 

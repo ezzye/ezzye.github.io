@@ -139,6 +139,7 @@ export const actionResponses = sqliteTable(
     status: text('status', { enum: ['new', 'reviewed', 'rejected'] })
       .notNull()
       .default('new'),
+    deleteAfter: text('delete_after'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
@@ -148,7 +149,21 @@ export const actionResponses = sqliteTable(
       table.actionId,
       table.status,
     ),
+    index('idx_action_responses_delete_after').on(table.deleteAfter),
   ],
+);
+
+export const retentionEvents = sqliteTable(
+  'retention_events',
+  {
+    id: text('id').primaryKey(),
+    dataType: text('data_type').notNull(),
+    trigger: text('trigger', { enum: ['automatic', 'manual'] }).notNull(),
+    dueDate: text('due_date').notNull(),
+    recordsDeleted: integer('records_deleted').notNull(),
+    completedAt: text('completed_at').notNull(),
+  },
+  (table) => [index('idx_retention_events_date').on(table.completedAt)],
 );
 
 export const outcomes = sqliteTable(

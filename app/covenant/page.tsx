@@ -17,7 +17,8 @@ export default function CovenantPage() {
         <h1>Kind to people. Hard on unfair rules.</h1>
         <p>
           You do not have to agree with every claim. You do have to stand for
-          DEI, treat people with care, check facts and say no to pile-ons.
+          diversity, equity and inclusion (DEI), treat people with care, check
+          facts and say no to pile-ons.
         </p>
       </header>
 
@@ -56,7 +57,10 @@ export default function CovenantPage() {
           <Check aria-hidden="true" />
           <h2>You must</h2>
           <ul>
-            <li>Stand for DEI and each person&apos;s worth.</li>
+            <li>
+              Stand for diversity, equity and inclusion (DEI), and for each
+              person&apos;s worth.
+            </li>
             <li>Listen. Do not make people show their pain.</li>
             <li>Say what you know and what you do not know.</li>
             <li>Test a claim without shaming the person.</li>

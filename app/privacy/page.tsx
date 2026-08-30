@@ -95,12 +95,21 @@ export default function PrivacyPage() {
         )}
         <h2>Retention</h2>
         {pilotPrivacy ? (
-          <p>
-            Full home-page test answers will be deleted by{' '}
-            <strong>{pilotPrivacy.responseDeleteDate}</strong>. A nameless
-            result may be kept only when the optional public-summary box was
-            ticked.
-          </p>
+          <>
+            <p>
+              Full home-page test answers must be deleted by the end of{' '}
+              <strong>{pilotPrivacy.responseDeleteDate}</strong> (UK time). Each
+              saved answer carries that deadline. After it passes, the workshop
+              will not show the answer and the next site request tries to erase
+              it.
+            </p>
+            <p>
+              The owner also has one button to stop the test and erase every
+              full answer early. The deletion log keeps only the number erased
+              and the dates, never the answers. A nameless result may be kept
+              only when the optional public-summary box was ticked.
+            </p>
+          </>
         ) : (
           <p>
             An exact deletion date has not been set, so the home-page test stays
@@ -114,10 +123,10 @@ export default function PrivacyPage() {
         <h2>What you can ask us to do</h2>
         <p>
           You can ask to see, fix, limit or delete what we hold, and you can
-          withdraw consent. Keep the reference from the home-page test: because
-          we ask for no name or email, that is how we find your reply. Sometimes
-          the law means we cannot do exactly what you ask. If so, we should say
-          why.
+          withdraw any consent you gave. Keep the reference from the home-page
+          test: because we ask for no name or email, that is how we find your
+          reply. Sometimes the law means we cannot do exactly what you ask. If
+          so, we should say why.
         </p>
         <p>
           You can also complain to the{' '}

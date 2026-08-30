@@ -109,8 +109,10 @@ export function OfferHelpForm({
             checked={covenantAccepted}
             onCheckedChange={(value) => setCovenantAccepted(Boolean(value))}
           />
-          I will treat people with care, back claims with proof and never join a
-          pile-on.
+          I accept this ground rule: Jason Arday was unable to speak as a child,
+          defied the odds and became a Black Cambridge professor — deservedly
+          so. I stand for diversity, equity and inclusion (DEI). I will treat
+          people with care, back claims with proof and never join a pile-on.
         </label>
         <label className="checkbox-line" htmlFor={`offer-contact-${actionId}`}>
           <Checkbox

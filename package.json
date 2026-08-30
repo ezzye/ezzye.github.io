@@ -10,6 +10,7 @@
     "build": "vinext build",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:maintainer-rehearsal": "node tests/maintainer-rehearsal.mjs",
     "lint": "oxlint app components db lib tests --ignore-pattern 'components/ui/**'",
     "format": "oxfmt",
     "db:generate": "drizzle-kit generate"

@@ -114,6 +114,21 @@ export type RepairBundle = {
   updates: RepairUpdate[];
 };
 
+export type AdminRepair = Repair & {
+  isPublished: boolean;
+};
+
+export type AdminRepairUpdate = RepairUpdate & {
+  isPublished: boolean;
+};
+
+export type AdminRepairBundle = {
+  repair: AdminRepair;
+  actions: ActionCard[];
+  outcomes: Outcome[];
+  updates: AdminRepairUpdate[];
+};
+
 export type ProposalInput = {
   workingTitle: string;
   problem: string;
@@ -157,7 +172,17 @@ export type AdminActionResponse = {
   consentAnonymousSummary: boolean;
   confirmedAdult: boolean;
   status: 'new' | 'reviewed' | 'rejected';
+  deleteAfter: string;
   createdAt: string;
+};
+
+export type AdminRetentionEvent = {
+  id: string;
+  dataType: string;
+  trigger: 'automatic' | 'manual';
+  dueDate: string;
+  recordsDeleted: number;
+  completedAt: string;
 };
 
 export type AdminActionInvite = {

@@ -8,9 +8,11 @@ import {
   getAdminAppeals,
   getAdminActionInvites,
   getAdminActionResponses,
+  getAdminWorkBundle,
+  getAdminRetentionEvents,
   getAdminProposals,
   getAdminStewardBriefs,
-  getCurrentRepairBundle,
+  purgeDueActionResponses,
 } from '@/db/queries';
 import { adminIsConfigured, getAdminUser } from '@/lib/admin';
 import {
@@ -62,15 +64,23 @@ export default async function AdminPage() {
     );
   }
 
-  const bundle = await getCurrentRepairBundle();
-  const [proposals, appeals, stewardBriefs, actionResponses, actionInvites] =
-    await Promise.all([
-      getAdminProposals(),
-      getAdminAppeals(),
-      getAdminStewardBriefs(bundle.repair.id),
-      getAdminActionResponses(bundle.repair.id),
-      getAdminActionInvites(bundle.repair.id),
-    ]);
+  await purgeDueActionResponses();
+  const bundle = await getAdminWorkBundle();
+  const [
+    proposals,
+    appeals,
+    stewardBriefs,
+    actionResponses,
+    actionInvites,
+    retentionEvents,
+  ] = await Promise.all([
+    getAdminProposals(),
+    getAdminAppeals(),
+    getAdminStewardBriefs(bundle.repair.id),
+    getAdminActionResponses(bundle.repair.id),
+    getAdminActionInvites(bundle.repair.id),
+    getAdminRetentionEvents(),
+  ]);
   const pilotAction = bundle.actions.find(
     (action) => action.participationMode === 'direct_response',
   );
@@ -91,6 +101,8 @@ export default async function AdminPage() {
           repair={bundle.repair}
           actions={bundle.actions}
           actionResponses={actionResponses}
+          retentionEvents={retentionEvents}
+          updates={bundle.updates}
           actionInvites={actionInvites}
           proposals={proposals}
           appeals={appeals}
