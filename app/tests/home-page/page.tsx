@@ -16,7 +16,7 @@ import { pilotRuntimeIsReady } from '@/lib/public-intake';
 
 export const metadata: Metadata = {
   title: 'Does the home page make sense?',
-  description: 'A private preview of the first ten-minute site test.',
+  description: 'A read-only preview of the first ten-minute site test.',
   robots: { index: false, follow: false },
   referrer: 'no-referrer',
 };
@@ -60,7 +60,7 @@ export default async function HomePageTest({
   const disabledReason = !runtimeReady
     ? 'This test is still being checked. Answers are off.'
     : action.isPreview
-      ? 'Owner-only preview. Answers are off. Do not invite testers yet.'
+      ? 'Read-only preview. Answers are off. Do not invite testers yet.'
       : action.status !== 'ready' && action.status !== 'offered'
         ? 'This test is closed. Answers are not being accepted.'
         : !inviteToken
@@ -80,7 +80,7 @@ export default async function HomePageTest({
       <header className="page-hero compact-hero">
         <p className="eyebrow">
           {action.isPreview
-            ? 'Owner-only preview'
+            ? 'Read-only preview'
             : isOpen
               ? 'Private 10-minute test'
               : 'Invitation needed'}

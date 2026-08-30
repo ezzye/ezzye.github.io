@@ -1,14 +1,17 @@
 import type { Metadata } from 'next';
 
 import { SiteShell } from '@/components/site-shell';
+import { getPublicContactEmail } from '@/lib/public-intake';
 
 export const metadata: Metadata = {
   title: 'Help with access',
   description:
     'How we are making this site easier to use and how to tell us when it is not.',
 };
+export const dynamic = 'force-dynamic';
 
 export default function AccessibilityPage() {
+  const contactEmail = getPublicContactEmail();
   return (
     <SiteShell>
       <header className="page-hero compact-hero">
@@ -34,11 +37,19 @@ export default function AccessibilityPage() {
           harder to use.
         </p>
         <h2>Tell us what is hard</h2>
-        <p>
-          Use the “Ask us to fix a mistake” form and choose “Accessibility
-          problem”. Tell us which page went wrong. You do not need to tell us a
-          diagnosis.
-        </p>
+        {contactEmail ? (
+          <p>
+            Email <a href={`mailto:${contactEmail}`}>{contactEmail}</a>. Tell
+            us which page went wrong and what made it hard to use. You do not
+            need to tell us a diagnosis.
+          </p>
+        ) : (
+          <p>
+            The feedback form is not open yet. Please do not send private case
+            details. A public contact address will appear here before the site
+            asks anyone for feedback.
+          </p>
+        )}
       </section>
     </SiteShell>
   );

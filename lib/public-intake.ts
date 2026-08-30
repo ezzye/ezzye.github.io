@@ -53,12 +53,22 @@ export function getPublicContactEmail(): string | null {
   return value && isValidPublicEmail(value) ? value : null;
 }
 
+export function getPublicPrivacyReplyTime(): string | null {
+  return configuredText(env.PUBLIC_PRIVACY_REPLY_TIME);
+}
+
+export function getPublicDataOwner(): string | null {
+  return configuredText(env.PUBLIC_DATA_OWNER);
+}
+
 export function publicIntakeIsOpen(): boolean {
   return (
     isEnabled(env.PUBLIC_INTAKE_ENABLED) &&
     isEnabled(env.PUBLIC_INTAKE_PRIVACY_READY) &&
     isEnabled(env.PUBLIC_INTAKE_STAFFED) &&
-    Boolean(getPublicContactEmail())
+    Boolean(getPublicContactEmail()) &&
+    Boolean(getPublicDataOwner()) &&
+    Boolean(getPublicPrivacyReplyTime())
   );
 }
 
@@ -77,8 +87,8 @@ export function pilotPrivacyIsReady(reviewDate?: string): boolean {
 
 export function getPilotPrivacyConfiguration(): PilotPrivacyConfiguration | null {
   const contactEmail = getPublicContactEmail();
-  const dataOwner = configuredText(env.PUBLIC_DATA_OWNER);
-  const replyTime = configuredText(env.PUBLIC_PRIVACY_REPLY_TIME);
+  const dataOwner = getPublicDataOwner();
+  const replyTime = getPublicPrivacyReplyTime();
   const lawfulBasis = configuredText(env.PUBLIC_LAWFUL_BASIS);
   const recipients = configuredText(env.PUBLIC_DATA_RECIPIENTS);
   const responseDeleteDate = configuredText(env.PILOT_RESPONSE_DELETE_DATE);

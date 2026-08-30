@@ -110,11 +110,11 @@ does not prove the timer on the exact Site version and cannot open this gate.
 The full source commit, GitHub review-branch head and saved Sites version source
 must be identical. Stop on any mismatch.
 
-Do not ask for packet A approval until the public privacy contact, promised
-reply time and every supporting privacy field required by the privacy page are
-approved, configured and visible on the private Site. Merely adding an email
-is not enough, and invitation and intake settings remain off. Packet A must
-also prove that the generated hostname will carry `noindex, nofollow`.
+Do not ask for packet A approval until an active public role address and its
+honest reply time are approved, configured and visible on the private Site.
+Pilot-specific privacy, permission and staffing values stay absent, and
+invitation and intake settings remain off. Packet A must also prove that the
+generated hostname will carry `noindex, nofollow`.
 
 ## Packet B — refresh after packet A has passed
 

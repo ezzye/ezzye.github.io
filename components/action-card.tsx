@@ -45,7 +45,7 @@ export function ActionCard({
           {isDemo ? (
             <span className="demo-label">Made-up job — not open</span>
           ) : action.isPreview ? (
-            <span className="demo-label">Owner-only preview — not open</span>
+            <span className="demo-label">Read-only preview — not open</span>
           ) : action.participationMode === 'direct_response' &&
             !pilotRuntimeReady ? (
             <span className="demo-label">Replies are off</span>

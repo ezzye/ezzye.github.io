@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(PUBLIC_ORIGIN),
+  alternates: {
+    canonical: PUBLIC_ORIGIN,
+  },
   title: {
     default: 'Coding for Justice — Small jobs that fix unfair things',
     template: '%s — Coding for Justice',
@@ -28,6 +31,7 @@ export const metadata: Metadata = {
     shortcut: '/favicon.svg',
   },
   openGraph: {
+    url: PUBLIC_ORIGIN,
     type: 'website',
     locale: 'en_GB',
     siteName: 'Coding for Justice',

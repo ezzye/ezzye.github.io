@@ -132,11 +132,11 @@ or the public A and CNAME records.
 
 This is needed before an unsigned-person check. It does not change DNS.
 
-Do not ask for this approval until a public privacy contact, an honest reply
-time and every supporting privacy field required by the privacy page have been
-approved, configured and checked on the private Site. Merely adding an email is
-not enough. That setup does not open the pilot or any form; invitation and
-intake settings stay off. The generated address must also send
+Do not ask for this approval until an active public role address and an honest
+reply time have been approved, configured and checked on the private Site.
+Pilot-specific privacy, permission and staffing values stay absent until that
+separate pilot is approved. This setup does not open the pilot or any form;
+invitation and intake settings stay off. The generated address must also send
 `X-Robots-Tag: noindex, nofollow` so a short validation does not become a search
 launch.
 

@@ -14,14 +14,14 @@ export function SiteHeader() {
         <span>Coding for Justice</span>
       </Link>
       <nav aria-label="Primary navigation" className="header-nav">
-        <Link href="/repairs">Open jobs</Link>
+        <Link href="/repairs">Jobs and examples</Link>
         <Link href="/outcomes">What changed</Link>
         <Link href="/covenant">Our rules</Link>
         <Link
           href="/start"
           className={cn(buttonVariants({ size: 'lg' }), 'header-action')}
         >
-          Get help
+          How to get help
         </Link>
       </nav>
     </header>
@@ -41,7 +41,7 @@ export function SiteFooter() {
         <Link href="/covenant">Our rules</Link>
         <Link href="/privacy">Privacy</Link>
         <Link href="/accessibility">Help with access</Link>
-        <Link href="/appeal">Ask us to fix a mistake</Link>
+        <Link href="/appeal">How review will work</Link>
         <Link href="/archive">Old site</Link>
         <Link href="/feed.xml">RSS</Link>
       </nav>

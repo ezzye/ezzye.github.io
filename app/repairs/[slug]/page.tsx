@@ -72,7 +72,7 @@ export default async function RepairPage({ params }: PageProps) {
         <p>{repair.summary}</p>
         <p className="page-help">
           {hasPreviewResponse
-            ? 'This is an owner-only preview. The form is below, but answers are off.'
+            ? 'This is a read-only preview. The form is below, but answers are off.'
             : hasOpenDirectResponse
               ? 'The job is below. Answer five short questions. No name or email.'
               : hasDirectResponse

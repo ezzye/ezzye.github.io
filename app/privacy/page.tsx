@@ -4,6 +4,8 @@ import { SiteShell } from '@/components/site-shell';
 import {
   getPilotPrivacyConfiguration,
   getPublicContactEmail,
+  getPublicDataOwner,
+  getPublicPrivacyReplyTime,
   pilotPrivacyIsReady,
 } from '@/lib/public-intake';
 
@@ -15,6 +17,8 @@ export const dynamic = 'force-dynamic';
 
 export default function PrivacyPage() {
   const contactEmail = getPublicContactEmail();
+  const dataOwner = getPublicDataOwner();
+  const replyTime = getPublicPrivacyReplyTime();
   const pilotPrivacy = getPilotPrivacyConfiguration();
   const pilotReady = pilotPrivacyIsReady();
   return (
@@ -144,11 +148,19 @@ export default function PrivacyPage() {
             about privacy, access or deletion. The stated reply time is{' '}
             {pilotPrivacy.replyTime}.
           </p>
+        ) : contactEmail && dataOwner && replyTime ? (
+          <p>
+            <strong>{dataOwner}</strong> is responsible for the site data.
+            Email <a href={`mailto:${contactEmail}`}>{contactEmail}</a>{' '}
+            about privacy, access, deletion or an access problem. We aim to
+            reply {replyTime}. Forms and private tests stay shut until their
+            separate privacy, permission and staffing checks are complete.
+          </p>
         ) : contactEmail ? (
           <p>
             Email <a href={`mailto:${contactEmail}`}>{contactEmail}</a>. The
-            responsible name, reply time and other privacy details are still
-            missing, so the test stays shut.
+            responsible name or reply time is still missing, so the forms and
+            private test stay shut.
           </p>
         ) : (
           <p>

@@ -143,7 +143,7 @@ export default async function Home() {
             {hasRealJob
               ? pilotIsOpen
                 ? 'First five-person test'
-                : 'Owner-only rehearsal'
+                : 'Read-only rehearsal'
               : 'Made-up example'}
           </p>
           <h2 id="one-job-title">
@@ -181,7 +181,7 @@ export default async function Home() {
             {hasRealJob
               ? pilotIsOpen
                 ? 'Invitation only. Each person gets a one-use private link.'
-                : 'Owner-only rehearsal. Answers are off.'
+                : 'Read-only rehearsal. Answers are off.'
               : 'This is not a real job. You cannot sign up for it.'}
           </p>
         </div>

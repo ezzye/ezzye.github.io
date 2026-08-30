@@ -130,7 +130,7 @@ export default function CovenantPage() {
             and get legal help before using this page as a formal policy.
           </p>
           <Link className="repair-link" href="/appeal">
-            Ask us to check or fix a choice
+            See how a review will work
           </Link>
         </div>
       </section>
