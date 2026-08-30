@@ -131,7 +131,7 @@ historical. Packet B repeats every field above from fresh evidence and adds:
 | Exact previous Sites version for code rollback | —                                                       |
 | Exact Hover web records for DNS rollback       | —                                                       |
 | Named rollback operator and triggers           | —                                                       |
-| Tested HTTPS fallback                          | —                                                       |
+| Tested HTTPS fallback                          | Both names pass normal hostname checks; no insecure override |
 
 Packet B is the only packet that can be named in DNS approval.
 

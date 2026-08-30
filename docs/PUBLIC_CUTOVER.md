@@ -24,9 +24,12 @@ public URLs.
 - `codingforjustice.org.uk` and `www.codingforjustice.org.uk` are already
   attached to Sites, but both are **pending** with TLS waiting for validation.
   That attachment does not route public traffic.
-- Public DNS still sends both names to the old GitHub Pages site.
-- The old apex works over HTTP. HTTPS fails because GitHub presents a
-  `*.github.io` certificate that does not cover either custom hostname.
+- Public DNS still sends both names to the old GitHub Pages site. Plain HTTP
+  returns the old apex page with `200`, and `www` redirects to the apex.
+- HTTPS is broken for both names. GitHub presents a `*.github.io` certificate
+  that names neither Coding for Justice address, so a normal browser rejects
+  it. A check that ignores certificate errors does not count as a working
+  site.
 - Hover webmail at `mail.codingforjustice.org.uk` also works over HTTP but has
   no valid HTTPS certificate. The candidate therefore uses a five-minute HSTS
   value for the apex and deliberately does **not** include subdomains.
@@ -104,6 +107,27 @@ valid HTTPS. Do not raise the five-minute HSTS value until both the GitHub
 rollback target and mail have tested HTTPS; cached HSTS cannot be undone by a
 DNS rollback.
 
+## Repair the old HTTPS fallback first
+
+This repair needs its own approval. It must not change the new Site, its access
+or the public A and CNAME records.
+
+1. In GitHub Pages settings, record the publishing source, custom domain, DNS
+   check, certificate message, last save time and `Enforce HTTPS` state.
+2. Confirm the current `master` Pages deployment succeeded and still publishes
+   the exact `CNAME` value `codingforjustice.org.uk`.
+3. If GitHub is still waiting after its published certificate window, protect
+   the domain with GitHub's account verification TXT record before detaching
+   anything. Adding that exact TXT record needs a separate, validation-only DNS
+   approval and must not change web routing.
+4. If GitHub's own guidance calls for removing and re-adding the custom domain,
+   ask for separate approval for that exact Pages setting change. Re-add only
+   `codingforjustice.org.uk`, leave the A and CNAME records alone, and wait for
+   the certificate rather than repeatedly restarting the check.
+5. Enable `Enforce HTTPS` only after GitHub has issued the right certificate.
+   Check normal HTTPS at the apex and `www`, including the expected redirect
+   and a path with a query string.
+
 ## Approval 1 — public generated address only
 
 This is needed before an unsigned-person check. It does not change DNS.
@@ -143,6 +167,15 @@ After that approval:
 Ask only after approval 1 has passed, packet B is complete and the Hover export
 exists.
 
+### HTTPS rollback gate
+
+Before asking for DNS approval, test the recorded rollback target with normal
+certificate checks turned on. Both exact public names must pass HTTPS and show
+the expected old page or redirect. Do not use an insecure override, a browser's
+`continue anyway` option or an HTTP `200` as proof. If either name fails, repair
+GitHub Pages HTTPS or name and test a different HTTPS fallback in packet B.
+Until then, do not approve the DNS move.
+
 > I approve the exact, unexpired release packet B named in this decision.
 > Add its four validation TXT records, replace only the five old GitHub web
 > records with its three Sites web records, and preserve mail, `share`,
@@ -157,24 +190,26 @@ exists.
 
 ## Applying an approved cutover
 
-1. Capture fresh Sites access, version, domain values, Hover export, GitHub
+1. Confirm packet B records a passing, normal HTTPS rollback test for both
+   exact public names. Stop if it is missing or either certificate now fails.
+2. Capture fresh Sites access, version, domain values, Hover export, GitHub
    branch heads, environment-key list and content-free database counts.
-2. Stop if the packet has expired or any value differs.
-3. Add only the four approved validation TXT records.
-4. Refresh both domain statuses in Sites. Stop on an error.
-5. In one short change, replace the four apex GitHub A records with the two
+3. Stop if the packet has expired or any value differs.
+4. Add only the four approved validation TXT records.
+5. Refresh both domain statuses in Sites. Stop on an error.
+6. In one short change, replace the four apex GitHub A records with the two
    Sites A records and replace the `www` CNAME with the Sites CNAME.
-6. Check authoritative DNS from both Hover nameservers.
-7. Wait for both Sites domains and both TLS certificates to become active.
-8. Check apex and `www`; `www` must redirect once to the apex while keeping the
+7. Check authoritative DNS from both Hover nameservers.
+8. Wait for both Sites domains and both TLS certificates to become active.
+9. Check apex and `www`; `www` must redirect once to the apex while keeping the
    path and query string.
-9. Check home, repairs, outcomes, privacy, archive, feed, robots, sitemap,
+10. Check home, repairs, outcomes, privacy, archive, feed, robots, sitemap,
    social image, the three old article paths and the three old information
    paths.
-10. Confirm the apex HSTS header is exactly the approved short value, contains
+11. Confirm the apex HSTS header is exactly the approved short value, contains
     no `includeSubDomains`, and existing Hover webmail still opens over HTTP.
-11. Recheck protection, closed forms, database counts and error logs.
-12. Watch closely for two TTL periods (30 minutes), then check again after 24
+12. Recheck protection, closed forms, database counts and error logs.
+13. Watch closely for two TTL periods (30 minutes), then check again after 24
     hours because DNS and certificates can take longer to settle.
 
 ## Rollback triggers
