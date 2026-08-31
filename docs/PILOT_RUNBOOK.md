@@ -1,152 +1,167 @@
 # First five people
 
-## Status now: owner-only rehearsal
+## Status now
 
-No real invitation is authorised. The current job is to use fake local answers
-to check that links, consent, stopping and permanent deletion work. Keep the
-hosted Site owner-only and leave the real forms locked.
+The public site is live at
+[codingforjustice.org.uk](https://codingforjustice.org.uk). The private
+five-person page check is still closed.
 
-Record every human choice in [LAUNCH_DECISIONS.md](LAUNCH_DECISIONS.md).
+The owner has approved:
 
-## Maintenance rehearsal — complete with fake local data
+- asking up to five adults, one person at a time;
+- the ask-first message below;
+- an unpaid check lasting up to 10 minutes;
+- the owner-directed wording for the two clearer opening questions;
+- Errol Elliott as the only reader of the private answers;
+- Unsigned Media Ltd as the data owner; and
+- deletion of full answers by 8 September 2026.
 
-The automated rehearsal used invented words and a throw-away local database.
-That database was removed afterwards. Do not create a fake repair in the hosted
-database: it could become visible at a later public cutover and repair deletion
-is not yet provided.
+The protected test action is still a preview. Its exact terms have not been
+approved in the workshop. No one-use link has been made, nobody has answered
+and the public intake forms remain closed.
 
-The rehearsal proved that the real protected routes:
+## What this test is for
 
-1. refuse an unsigned workshop request;
-2. start one private repair and refuse a second unfinished repair;
-3. save the problem, fairer change, safety, owner, checker and review date;
-4. make one bounded first job with pay, proof and a stop rule;
-5. refuse publication while anything required is missing;
-6. keep the repair and job out of public reads until the human publish checks;
-7. publish the repair while leaving its first job stopped;
-8. keep one weekly update private, refuse a second draft, then publish it after
-   its own checks; and
-9. stop all child jobs when the repair stops.
+The invitation tells people the broad idea. The home page must still do its own
+job. The check asks whether a fresh reader can explain Coding for Justice, see
+the point, find a next step and feel welcomed rather than processed.
 
-A pass proves the private/save/publish gates work. It does not authorise
-invitations, hosted content publication, public access, outreach or a claim that
-anything has been repaired.
+This is a small page check. It is not proof that the site works for everyone and
+it is not yet a justice repair.
 
-## Future five-person test — not authorised yet
+The five questions are:
 
-If the owner later approves it, five fresh people will check one page. We will
-prepare a private note of what failed and what changed. Publishing that note is
-a different decision. The steps below describe the future test; they are not
-permission to contact anyone now.
+1. After reading the home page, how would you explain Coding for Justice to
+   someone else?
+2. What did the page add, clear up or leave muddled about the goal?
+3. What would you click first?
+4. How does the page feel? What on the page made it feel that way?
+5. Did anything feel unclear, unsafe or pushy?
 
-## Keep it shut until this is true
+## What has already been proved
 
-- Every pilot row in the launch decision register is approved.
-- A real person or organisation is named as responsible for the data.
-- A working privacy email and a reply time are shown on the privacy page.
-- The privacy page says why the answers are used, the lawful basis, where they
-  are kept, who may receive them, the exact deletion date, people's rights, how
-  to withdraw and how to complain to the ICO.
-- The owner has chosen unpaid or a fixed thank-you payment. The invite says the
-  same thing as the site.
-- The opening and closing dates leave a fair amount of time.
-- One person is named to read replies and one person is named to check the
-  result.
-- Deleting a dummy reply has been tested.
+A rehearsal with invented words and a throw-away local database proved that
+links, consent, stopping and permanent deletion work. The private workshop
+gates were also tested.
 
-The [ICO says privacy information must be clear and available when the data is
-collected](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/individual-rights/individual-rights/right-to-be-informed/).
+A separate Cloudflare timer with no public or preview web address now calls the
+Site's private retention route every 15 minutes. It has completed unattended
+runs without an error. The Site also checks retention during normal requests as
+a backup.
 
-## Set the gates
+These checks prove the machinery. They do not approve the exact pilot details,
+create a link, contact anyone or prove a fairness outcome.
 
-The protected workshop shows these checks. A future test cannot make a link or
-accept an answer until the privacy settings and real-invitation permission are
-all present:
+## Keep replies shut until this is true
 
-- `PUBLIC_CONTACT_EMAIL`: the public privacy contact.
-- `PUBLIC_DATA_OWNER`: the responsible person or organisation.
-- `PUBLIC_PRIVACY_REPLY_TIME`: the promised reply time.
-- `PUBLIC_LAWFUL_BASIS`: the checked lawful basis in plain words.
-- `PUBLIC_DATA_RECIPIENTS`: who may handle the data and where.
-- `PILOT_RESPONSE_DELETE_DATE`: the exact full-answer deletion date.
-- `PILOT_PRIVACY_READY=true`: the data owner has completed the full check.
-- `PILOT_INVITES_AUTHORIZED=true`: the owner has separately authorised real
-  invitations.
-- `PILOT_INVITE_APPROVAL_REFERENCE`: where that recorded decision can be found.
-- `PILOT_RECRUITMENT_PLAN`: the approved criteria and count, with no names or
-  contact details.
-- `PILOT_REPLY_READER`: the person who will read and handle private replies.
+- The protected workshop shows the exact job, questions, pay, people, privacy,
+  recruitment rules and dates.
+- The owner presses **Approve these exact details** after reading that complete
+  set.
+- The saved approval still matches the live terms.
+- The timer shows a recent successful run.
+- The first person has freely said yes to receiving a private link.
 
-The owner then reads the whole job, questions, pay, people, privacy, recruitment
-rules and dates in the workshop and presses **Approve these exact details**.
-The software stores a check of that exact set. Any later change makes the
-approval stale, so links and replies stay shut until the new set is approved.
+Any later change to the job, questions or terms makes the saved approval stale.
+Links and replies then stay shut until the owner approves the new exact set.
 
 Keep `PUBLIC_INTAKE_ENABLED`, `PUBLIC_INTAKE_PRIVACY_READY` and
-`PUBLIC_INTAKE_STAFFED` unset or `false`. That keeps the larger proposal, offer
-and review forms shut during the five-person test.
+`PUBLIC_INTAKE_STAFFED` unset or `false`. That keeps the larger proposal,
+offer and review forms closed during this test.
 
-## Future invitation steps — not authorised yet
+## Ask first, then make one link
 
-1. Make one one-use link in the protected workshop.
-2. Copy it immediately. The site database stores only a scrambled copy; the
-   hosting service may still keep security and operating logs.
-3. Send it to one adult who did not build the site or read the plan.
-4. Ask whether they want to take part. Do not add them to a list without asking.
-5. Send one reminder at most.
-6. Make the next link only when the next person agrees.
+1. Add the person's name and one honest reason to the message below.
+2. Send the public website address in that message.
+3. Wait for a clear yes. Do not record a person on a list merely because you
+   thought of them.
+4. Check and approve the exact pilot terms in the protected workshop if that
+   has not yet been done.
+5. Make one one-use link.
+6. Copy it immediately. The database stores only a scrambled copy. The hosting
+   service may still keep normal security and operating logs.
+7. Send that private link only to the person who said yes.
+8. Make the next link only after the next person says yes.
 
-Do not make or export all five links in advance. The readable link is shown
-only once and works like a key. Keeping one unused key at a time makes it clear
-which link to stop if somebody changes their mind.
+Do not make or export all five links in advance. A readable link works like a
+key, is shown only once and can be stopped if the person changes their mind.
 
-Choose a mix of phones and computers. Choose people who accept the diversity,
-equity and inclusion (DEI), care and no-pile-on ground rule and who will say
-when the page is bad.
+Choose a mix of phones and computers. Choose adults who did not build the site
+or read the plan, who accept the diversity, equity and inclusion (DEI), care
+and no-pile-on ground rule, and who will say plainly when the page is bad.
+
+## Approved ask-first message
+
+> Hi [Name]. Could I please ask a small favour? It is completely fine to say
+> no.
+>
+> I'm building Coding for Justice:
+>
+> https://codingforjustice.org.uk
+>
+> The name sounds grand, but the idea is practical. I'm a software engineer. I
+> want to use code and small bits of human help to fix unfair forms, rules and
+> services, one job we can actually finish at a time. That feels more useful
+> than shouting at the internet and hoping it grows a conscience.
+>
+> The project backs diversity, equity and inclusion, fairness and human
+> dignity. No bullying. No pile-ons.
+>
+> I'm asking you because [add one honest reason here]. I trust you to tell me
+> whether the home page makes sense, or whether I've made it sound like a
+> committee ate a dictionary.
+>
+> Would you please spend up to 10 minutes looking at it and answering five
+> short questions? It is unpaid.
+>
+> That address is the public website. If you say yes, I'll send you a separate
+> private, one-use link for the questions. Please do not pass that link on.
+>
+> I'll be the only person who reads your answers. They may help me improve the
+> page, but I won't publish or quote them, report totals or themes, or pretend
+> five people prove the whole internet. The site will not ask for your name,
+> email, diagnosis, personal story or case details. I'll delete your answers
+> after the test. Their deadline is the end of 8 September 2026, and the
+> deletion check runs every 15 minutes.
+>
+> No awkwardness, no sales pitch and no tiny violin.
+>
+> Would you like the one-use link? Either way, thank you for reading this.
+
+Use full stops, commas or brackets instead of em dashes in invitation copy.
+Keep the easy no, the full website address, the plain goal, the personal reason,
+the privacy terms, the word please and a real thank you.
 
 ## While replies come in
 
 - Keep the home page unchanged.
 - Check the protected workshop once at the same time each day. There are no
   notifications.
-- Stop the test at once if the page breaks, somebody adds private case details,
-  a question causes harm or the reviewer cannot keep up.
-- A stopped or used link cannot be reused. Make a replacement only if a reply is
-  deleted or rejected and a place has genuinely reopened.
-- Stop after five privately usable replies or on the closing date, whichever
+- Send one reminder at most.
+- Stop at once if the page breaks, somebody adds private case details, a
+  question causes harm or the reviewer cannot keep up.
+- A stopped or used link cannot be reused. Make a replacement only if a reply
+  is deleted or rejected and a place has genuinely reopened.
+- Stop after five privately usable replies or on 6 September 2026, whichever
   comes first.
 
 ## After the fifth reply
 
 1. Stop replies before reading the results as a set.
 2. Use every privately usable reply to decide whether the page should change.
-3. Prepare a private working note: what confused people, what changed and what
-   did not change. Do not publish it or copy answers into an AI tool.
-4. Stop the private job, revoke open links and delete every full reply. The
-   privacy-notice date is the latest permitted date, not a reason to keep them.
-5. Check the content-free deletion proof and the latest automatic-check time.
-   The worker checks every 15 minutes; page loads repeat the check as a backup.
-   Do not send real invitations until the deployed owner-only Site shows a
-   recent automatic-check time.
-6. If a public result is useful, make it as a separate job using only a public
-   HTTPS evidence page that anyone can open without signing in. Do not use a
-   reply, a private note or a personal story as its source.
-7. Read the exact public preview and open its evidence link. Check that the page
-   contains no private material, then record the review. Any saved word or link
-   change cancels that review.
-8. Use the separate publish step only after that public-evidence review.
+3. Prepare a private working note about what confused people, what changed and
+   what did not change. Do not publish it or copy answers into an AI tool.
+4. Revoke open links and delete every full reply. The deletion date is the
+   latest permitted date, not a reason to keep answers.
+5. Check the content-free deletion proof and the latest timer run.
+6. If a public result would be useful, make it as a separate job using public
+   before-and-after page evidence. Do not use replies, private notes, personal
+   stories, counts, themes or quotes as its source.
+7. Ask the owner to approve the exact public wording before it is published.
 
-## Future invitation words — not authorised yet
+## What this first step unlocks
 
-> Hi. Coding for Justice is checking whether its home page makes sense.
->
-> Would you give up to ten minutes to check it? We need an adult who did not
-> help build the site. This is a page test, not a test of you. We do not ask for
-> your name, diagnosis or personal story, and we do not record you. Full answers
-> stay private and will not be used as the source of a public result.
->
-> It is [unpaid / pays £X]. You can stop, or write “skip” for any question. We
-> stand for diversity, equity and inclusion (DEI) and reject bullying and
-> pile-ons.
->
-> Would you like a one-use link? It is completely fine to say no.
+Once the page has been improved and a public, evidence-based receipt is
+separately approved, Coding for Justice can ask community groups for one
+recurring unfair form, rule or service and one person with some power to change
+it. That is when the first real repair can begin.

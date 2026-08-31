@@ -214,6 +214,13 @@ try {
     )
     .first();
   const questions = JSON.parse(action.response_questions);
+  assert.deepEqual(questions, [
+    'After reading the home page, how would you explain Coding for Justice to someone else?',
+    'What did the page add, clear up or leave muddled about the goal?',
+    'What would you click first?',
+    'How does the page feel? What on the page made it feel that way?',
+    'Did anything feel unclear, unsafe or pushy?',
+  ]);
   const replyBody = {
     actionId: 'CFJ-A004',
     inviteToken: firstToken,
@@ -250,6 +257,11 @@ try {
   });
   assertOk(acceptedReply, 201);
   const responseId = acceptedReply.json.reference;
+  const savedReply = await database
+    .prepare(`SELECT questions FROM action_responses WHERE id = ?`)
+    .bind(responseId)
+    .first();
+  assert.deepEqual(JSON.parse(savedReply.questions), questions);
 
   const secondInvite = await request('/api/admin/action-invites', {
     method: 'POST',

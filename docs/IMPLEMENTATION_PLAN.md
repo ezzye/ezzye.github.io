@@ -2,8 +2,11 @@
 
 ## Where we are now
 
-- Done: the dynamic Site, managed database, protected workshop, warm home page,
-  first page-test rehearsal and owner-only deployment.
+- Done: the dynamic Site, managed database, protected workshop and warm home
+  page are public at
+  [codingforjustice.org.uk](https://codingforjustice.org.uk). OpenAI Sites hosts
+  the application. GitHub keeps the source and release history, but no longer
+  hosts the public domain. The separate Sites hosting preview link remains off.
 - Done: replies are off by default; capacity, closing date, consent and permanent
   reply deletion are enforced by the server.
 - Done: outside proposal, offer and review forms now stay shut unless a public
@@ -15,35 +18,34 @@
   that job stopped when the repair is published, and hold one weekly update
   privately until a separate publish choice.
 - Done: a self-contained route rehearsal checks the exact owner workflow, and a
-  separate built-Worker rehearsal checks the scheduled deletion job against a
-  throw-away database. This is local proof, not proof that hosted scheduling is
-  running.
-- Done: on 30 August 2026, the separate route-less Cloudflare timer test recorded
-  two full unattended runs. Both runs completed without an error, advanced the
-  empty test database heartbeat and left all private-input tables empty. Public
-  and preview Worker addresses were disabled, with no custom route or domain.
-  The checked evidence and limits are in
+  built-Worker rehearsal checks the scheduled deletion job against a throw-away
+  database.
+- Done: before launch, an isolated route-less Cloudflare Worker and throw-away
+  database recorded two unattended timer runs. After launch, the Worker was
+  linked to the Site's protected retention route using a shared secret. Its
+  public and preview addresses remain disabled, with no custom route or domain.
+  The live Site database showed 42 completed sweeps and no latest error when
+  last checked at 07:45:15 UTC on 31 August 2026. The evidence and limits are in
   [CLOUDFLARE_CANARY.md](CLOUDFLARE_CANARY.md).
-- Not proved: the owner-only Site itself has not recorded an automatic hosted
-  deletion heartbeat. The direct Cloudflare pass proves the Worker scheduling
-  path, not that Sites installed the same timer. It cannot approve invitations,
-  public access or DNS.
 - Done: full test replies carry a non-extendable deletion deadline. Overdue
   replies fail closed, the next site request tries to erase them, and the owner
   can stop the reply job and erase every full reply early. The retained deletion
   proof contains counts and dates, not answers.
+- Done: the public privacy details, data owner, reply reader, unpaid terms,
+  recruitment rules, five-person limit and deletion date are configured. The
+  owner has approved the ask-first message and directed the clearer opening
+  questions. The exact complete set still needs workshop approval.
+- Still closed: the page-test action remains a preview, its exact terms have not
+  been approved in the workshop, and no link or answer exists.
 - Not proved: no partner-backed repair has run and no fairness outcome has been
-  achieved. The rehearsal proves maintenance machinery, not social impact or
-  readiness for public launch.
-- Next: the owner must complete and approve the choices in
-  [LAUNCH_DECISIONS.md](LAUNCH_DECISIONS.md). Until then the real test stays
-  locked.
-- Prepared, not authorised: the current GitHub route, exact pending Sites DNS
-  values, staged public-access approval, rollback triggers and maintenance
-  routine are recorded in [PUBLIC_CUTOVER.md](PUBLIC_CUTOVER.md) and
-  [PUBLIC_RELEASE_PACKET.md](PUBLIC_RELEASE_PACKET.md). The old GitHub
-  custom-domain HTTPS fallback is broken and must be repaired or replaced
-  before DNS approval.
+  achieved. The live foundation and page check prove care with process, not
+  social impact.
+- Next: approve the exact page-test terms in the protected workshop, ask one
+  person with the approved message and make one private link only after that
+  person says yes.
+- Kept for recovery: the legacy GitHub Pages commit, cutover record and rollback
+  evidence remain in [PUBLIC_CUTOVER.md](PUBLIC_CUTOVER.md) and
+  [PUBLIC_RELEASE_PACKET.md](PUBLIC_RELEASE_PACKET.md).
 
 The day-to-day pilot steps are in [PILOT_RUNBOOK.md](PILOT_RUNBOOK.md).
 The low-effort upkeep routine is in [MAINTENANCE.md](MAINTENANCE.md).
@@ -116,10 +118,11 @@ The intake does not request addresses, credentials, identity numbers, case numbe
 
 - Server-rendered React application using the OpenAI Sites runtime.
 - Managed D1 database for repairs, actions, outcomes and private intake records.
-- A separate Cloudflare Worker/D1 package for a made-up-data timer test. It is
-  not deployed, has no public-domain route and never copies the Sites database.
-- A 15-minute scheduled deletion check, with the same deletion check on page
-  requests as a backup and a content-free heartbeat visible to the owner.
+- A live, separate Cloudflare Worker for the 15-minute deletion timer. It has no
+  public or preview web address and calls only the Site's protected retention
+  route with a shared secret.
+- The same deletion check on Site requests as a backup, with a content-free
+  heartbeat visible to the owner.
 - Dispatch-owned ChatGPT sign-in for the protected review area.
 - Server-side validation, request-size limits, honeypots and rate limiting on public forms.
 - Human-readable URLs and server-rendered content for resilience and search.
@@ -132,7 +135,7 @@ The intake does not request addresses, credentials, identity numbers, case numbe
 
 ## Delivery stages
 
-### Stage 1 — safe foundation
+### Stage 1: safe foundation
 
 - Publish the covenant and operating boundaries.
 - Add the fictional demonstration repair and outcome.
@@ -141,14 +144,14 @@ The intake does not request addresses, credentials, identity numbers, case numbe
 - Configure the model secret only after the private deployment passes review;
   never put it in source control or browser code.
 
-### Stage 2 — partner-gated proof
+### Stage 2: partner-gated proof
 
 - Hold six discovery conversations from 20–25 tailored invitations.
 - Select one repeatable process with an affected-person reviewer and an adoption owner.
 - Replace the demonstration as the homepage lead only after consent, evidence and publication review.
 - Run one 90-day repair with a weekly Workshop Note and dated Repair Receipt.
 
-### Stage 3 — decision
+### Stage 3: decision
 
 - Continue if there is a useful outcome or meaningful institutional response, safe contributor experience, a maintenance owner and sustainable founder workload.
 - Iterate if the process is useful but the intervention fails.

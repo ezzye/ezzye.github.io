@@ -1,58 +1,62 @@
 # Launch decisions
 
-This is the one list of choices that still need a human answer. A code change,
-green test or draft plan does not answer them.
+This register records human choices. A code change or green test cannot make a
+choice on the owner's behalf.
 
-Do not invite a real person, open intake, publish a Repair Receipt, contact a
-partner, make the Site public or change DNS until the rows for that step say
-**Approved** and point to evidence.
+## Public state last checked at 07:45:15 UTC on 31 August 2026
 
-| Step     | Decision                                                              | Approved value | Accountable owner | Status         | Approved on | Evidence |
-| -------- | --------------------------------------------------------------------- | -------------- | ----------------- | -------------- | ----------- | -------- |
-| Pilot    | Person or organisation responsible for the data                       | —              | Site owner        | Not decided    | —           | —        |
-| Pilot    | Public privacy email and reply time                                   | —              | Site owner        | Not decided    | —           | —        |
-| Pilot    | Purpose and lawful basis                                              | —              | Data owner        | Not decided    | —           | —        |
-| Pilot    | Who receives data, where it is handled and any transfer               | —              | Data owner        | Not decided    | —           | —        |
-| Pilot    | Exact date full test answers are deleted                              | —              | Data owner        | Not decided    | —           | —        |
-| Pilot    | Rights, withdrawal and ICO complaint words checked                    | —              | Data owner        | Not decided    | —           | —        |
-| Pilot    | Pay or unpaid terms                                                   | —              | Site owner        | Not decided    | —           | —        |
-| Pilot    | Recruitment rules and agreed invitation count                         | —              | Site owner        | Not decided    | —           | —        |
-| Pilot    | Person reading replies and person checking the result                 | —              | Site owner        | Not decided    | —           | —        |
-| Pilot    | Opening and closing dates                                             | —              | Site owner        | Not decided    | —           | —        |
-| Pilot    | Permission to send real one-use invitations                           | —              | Site owner        | Not authorised | —           | —        |
-| Publish  | Exact repair frame and first job, and permission to make them visible | —              | Site owner        | Not authorised | —           | —        |
-| Publish  | Exact weekly Workshop Note and permission to make it visible          | —              | Site owner        | Not authorised | —           | —        |
-| Publish  | Exact Repair Receipt and permission to publish it                     | —              | Site owner        | Not authorised | —           | —        |
-| Outreach | People or groups, exact message and permission to send                | —              | Site owner        | Not authorised | —           | —        |
-| Public   | Working public privacy contact and honest reply time                  | —              | Site owner        | Not decided    | —           | —        |
-| Public   | Packet A: exact version, evidence and expiry                          | —              | Site owner        | Not approved   | —           | —        |
-| Public   | Permission to expose that version at the generated address only       | —              | Site owner        | Not authorised | —           | —        |
-| Public   | Acceptance of unsigned generated-address checks                       | —              | Site owner        | Not accepted   | —           | —        |
-| Public   | Canonical hostname (`codingforjustice.org.uk` is proposed)             | —              | Site owner        | Not decided    | —           | —        |
-| Public   | Packet B: exact Sites DNS values, Hover export and record diff         | —              | Site owner        | Partly captured; export missing; refresh required | — | [Cutover plan](PUBLIC_CUTOVER.md) |
-| Public   | Permission to apply that exact DNS change                             | —              | Site owner        | Not authorised | —           | —        |
-| Public   | Rollback triggers, authority and tested HTTPS fallback                | —              | Site owner        | Not ready      | —           | —        |
-| Public   | Maintainer, deputy, cadence and absence rule                           | —              | Site owner        | Not decided    | —           | [Maintenance](MAINTENANCE.md) |
+- The OpenAI Site is public at
+  [codingforjustice.org.uk](https://codingforjustice.org.uk).
+- The custom domain no longer uses GitHub Pages for hosting.
+- The Sites hosting preview link is off.
+- The larger proposal, offer and review forms are closed.
+- The five-person page test is still a preview.
+- Its exact terms have not been approved in the protected workshop.
+- The test had zero one-use links, zero private answers and zero retention
+  events.
+- The route-less Cloudflare retention timer had completed 42 Site database
+  sweeps with no latest error.
+
+## Recorded choices
+
+| Step     | Decision                                   | Approved value                                                                                                    | Status                | Date or evidence                                                            |
+| -------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | --------------------- | --------------------------------------------------------------------------- |
+| Public   | Public launch                              | OpenAI Sites at `codingforjustice.org.uk`                                                                         | Complete              | Owner authorised launch; custom domain checked on 30 August 2026            |
+| Public   | Data owner                                 | Unsigned Media Ltd                                                                                                | Approved              | Owner choice                                                                |
+| Public   | Privacy contact                            | `codingforjustice@itshackney.com`, replies within 30 days                                                         | Approved              | Owner confirmed forwarding mailbox                                          |
+| Public   | Lawful basis for page-test answers         | Consent under UK GDPR Article 6(1)(a)                                                                             | Configured            | Live privacy notice and protected settings                                  |
+| Public   | Data handling and people's rights          | Live privacy notice explains purpose, service providers, withdrawal, deletion and ICO complaint route             | Configured            | Live privacy notice                                                         |
+| Pilot    | Full-answer deletion date                  | 8 September 2026                                                                                                  | Approved              | Protected setting and live privacy notice                                   |
+| Pilot    | Pay and time                               | Unpaid, up to 10 minutes, spend no money                                                                          | Approved              | Action terms                                                                |
+| Pilot    | Recruitment                                | Up to five adults, one person at a time, mixed devices, did not build the site, accepts DEI, care and no pile-ons | Approved              | Owner said five people are available                                        |
+| Pilot    | Private reply reader and result checker    | Errol Elliott                                                                                                     | Approved              | Protected setting                                                           |
+| Pilot    | Opening and closing                        | Open only after exact terms approval and the first clear yes; close after five usable replies or 6 September 2026 | Approved rule         | Runbook                                                                     |
+| Pilot    | Ask-first invitation wording               | Warm message with public URL, plain goal, easy no, privacy facts, please and thank you                            | Approved              | Owner said “Use this” on 31 August 2026                                     |
+| Pilot    | First two questions                        | Ask the reader to explain the project, then say what the page cleared up or left muddled                          | Owner-directed        | Owner said “Use this” on 31 August 2026; complete workshop approval pending |
+| Pilot    | General permission to recruit              | Five-person plan and ask-first approach                                                                           | Approved in principle | `PILOT_INVITES_AUTHORIZED=true` with recorded owner approval                |
+| Pilot    | Exact live action terms                    | Current complete job, questions, pay, people, privacy and dates                                                   | Not approved yet      | `pilot_terms_approved_at` and approval snapshot remain empty                |
+| Pilot    | First person asked                         | None                                                                                                              | Not started           | No name or contact detail belongs in this file                              |
+| Pilot    | One-use links and replies                  | None                                                                                                              | Closed                | Zero invites and zero responses                                             |
+| Publish  | Public page-repair receipt                 | Exact words and evidence                                                                                          | Not authorised        | Decide only after replies are deleted; private replies cannot be its source |
+| Outreach | Community groups and exact partner message | None                                                                                                              | Not authorised        | Decide only after an honest page-repair receipt is public                   |
+| Repair   | First partner-backed repair                | None                                                                                                              | Not started           | Requires partner, affected-person checker and adoption owner                |
+
+## What the software still checks
+
+The protected workshop checks the full privacy settings, recorded recruitment
+permission, recruitment rules, reply reader, exact job wording and questions,
+pay, people and dates. It stores a check of that exact set.
+
+Any later change makes the exact approval stale. The test cannot create a link
+or accept an answer until the owner reads the complete set again and presses
+**Approve these exact details**.
+
+The public Site and the private page check are separate choices. Public launch
+does not open the test. General permission to recruit does not approve a link.
+Saying yes to the ask-first message does not remove the workshop gate.
 
 Do not put invitees' names or contact details in this file, the repository, the
-Site database or a Repair Receipt. Record only the agreed recruitment rules and
-counts here.
+Site database or a public result. Record only rules and counts.
 
-## What the software checks
-
-For a future pilot, the protected workshop checks the full privacy settings,
-recorded permission for real invitations, the approved recruitment plan and
-reply reader, the exact job wording and questions, pay, people and dates. It
-also needs at least one unused one-use link and keeps all other private forms
-closed. It checks the same rules again when a reply is sent. The public Site and
-domain are separate choices.
-
-The owner must still read this table. Software cannot decide who is legally
-responsible, what the lawful basis is, who should be invited or whether the
-public launch is right.
-
-The workshop permits only one active repair, one unfinished repair draft and
-one unfinished update draft. A repair needs a complete frame and first job
-before publication, and that job remains stopped. These checks do not prove the
-words are true, record a partner's consent or authorise public hosting. Outcome
-publication and any Repair Receipt remain separate human decisions.
+Outcome publication, a public Repair Receipt, partner outreach and the first
+real repair each need their own later human decision.

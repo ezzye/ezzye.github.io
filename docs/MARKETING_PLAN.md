@@ -1,85 +1,112 @@
 # How people will hear about Coding for Justice
 
-**Future plan — not authorised yet.** Do not contact people, post publicly or
-send invitation links in the owner-only rehearsal.
-
-## The first aim
+## Current aim
 
 Do not build an audience yet.
 
-If the owner later approves the pilot, five fresh people check one page. We
-prepare a private Repair Receipt about what confused them and what changed. It
-becomes marketing only after the owner approves the exact public copy.
+The public site is live, but its first job is to earn trust. Five fresh people
+will check whether the home page explains the name, the practical goal and what
+to do next. The check also asks whether the page feels warm.
 
-## Who to ask
+The Sites hosting preview link is off. Separately, the five-person action is a
+locked preview inside the protected workshop. That action is not open to
+answers.
 
-Think of up to eight adults you already know or can reach through a trusted
-person. Ask each person before recording that they agreed to receive a link.
-Invite one person at a time until five take part.
+The private test is still closed. No public post, ad, hashtag, press pitch,
+partner outreach or one-use link is authorised by this plan.
 
-Do not put their names or contact details in the repository, Site database or
-Repair Receipt. If a short working contact list is needed, keep it somewhere
-private and delete it when the invitations end.
+## The first five people
 
-Choose people who:
+The owner has five possible readers in mind. Ask one person at a time with the
+[approved ask-first message](PILOT_RUNBOOK.md#approved-ask-first-message).
+
+Choose adults who:
 
 - did not build the site or read the plan;
 - accept the diversity, equity and inclusion (DEI), care and no-pile-on ground
   rule;
-- use a mix of phones and computers;
-- will say when something is bad, not just be supportive.
+- use a mix of phones and computers; and
+- will say when something is bad, not merely be supportive.
 
-Ask trusted people to forward the invitation. Do not ask them to give you
-someone else's details.
+The first message contains the public website, explains the name and goal, makes
+saying no easy and ends with a thank you. A private one-use link is made only
+after the person says yes and the exact pilot terms are approved in the
+workshop.
 
-Use no public post, hashtags, ads, outrage story or moral pressure. Send one
-reminder at most.
+Do not put names or contact details in the repository, Site database or any
+public result. Send one reminder at most.
 
-## What may be published later
+## What happens after five replies
 
-Do not publish anything merely because the pilot finished. First prepare one
-private Repair Receipt, then ask the owner to approve that exact copy. It should
-show evidence, not praise or testimonials:
+1. Close the private test.
+2. Read the replies privately.
+3. Improve the home page.
+4. Delete full replies and revoke unused links.
+5. Check the content-free deletion proof.
+6. Prepare a separate public page-repair receipt using only public
+   before-and-after page evidence.
+7. Publish that receipt only after the owner approves its exact words.
 
-- what we tested and when;
-- the five questions;
-- whether it was paid or unpaid;
-- exactly what changed;
-- what did not change and why;
-- public before-and-after evidence, such as the checked page versions;
-- the limits: a small private page test is not proof for everyone;
-- who checked it and the next check date.
+Do not publish reply counts, themes, names, full answers, guesses about
+diagnosis or individual quotes. Five people can improve this page. They cannot
+prove it works for everyone.
 
-Do not publish reply counts, themes, names, full answers, guesses about diagnosis
-or individual quotes. The private test may help the owner improve the page, but
-it is not the source of a public result. Any public Repair Receipt must use a
-public HTTPS evidence page that anyone can open without signing in.
+## The first partner step
 
-## The first partner message
+Only after the page-repair receipt is public, privately approach suitable
+community groups. Start with one 30-minute talk, not a grand partnership.
 
-Only after the Repair Receipt is public and the owner separately approves
-outreach, send the approved message privately to the approved community groups:
+The plain ask is:
 
-> Five people checked whether our own page made sense. We published what failed
-> and what changed. Now we want one community group with one frustrating form,
-> rule or service, and one person able to change it. No casework, personal
-> stories or private case details.
+> We checked whether our own page made sense and published what we changed. Now
+> we want one community group with one frustrating form, rule or service, and
+> one person able to change it. We do not want case files, private stories or
+> public blame.
 
-Ask for one 30-minute talk. Do not ask for a long partnership first.
+The larger target is six short discovery conversations from roughly 20 to 25
+carefully chosen approaches.
+
+## Choosing the first real repair
+
+Proceed only when there is:
+
+- one named community partner;
+- one affected-person reviewer with real decision rights;
+- one named service or adoption owner;
+- one repeatable, bounded barrier;
+- one measurable starting point and fairer aim;
+- no emergency, active legal case or uncontrolled sensitive data; and
+- one maintenance or hand-off owner.
+
+Do not build where nobody can adopt the result.
+
+## The 90-day repair
+
+Run one repair at a time. Give the partner, affected-person checker, contributor
+and service owner clear roles. Every task needs one output, owner, checker,
+date, proof and stop rule.
+
+Publish a short Workshop Note only when facts or action change. At the end,
+publish a Repair Receipt that says what happened, what changed, who benefited,
+what did not change, how sure we are and who checked it.
 
 ## What counts
 
-- Five completed, safe page checks.
-- One honest Repair Receipt.
+- Five completed and safely deleted page checks.
+- One honest page-repair receipt.
 - One useful introduction to a community group.
 - One small problem with a person who can change it.
-- Work finished and maintained, not views, likes or arguments.
+- One partner-backed repair adopted, changed after evidence or stopped for a
+  clear reason.
+
+Views, likes, arguments and outrage are not results.
 
 ## Keep it finishable
 
-- One live job at a time.
+- One live repair at a time.
+- One next job, one owner and one date.
 - One fixed dashboard check each day while a test is open.
-- One next task, one owner and one stop date.
+- One weekly note only when something changed.
 - A missed update creates one new check, not a backlog.
-- No AI publication. AI may draft from public facts only; a person decides what
-  is true and what goes online.
+- AI may draft from public facts only. A person decides what is true and what
+  goes online.

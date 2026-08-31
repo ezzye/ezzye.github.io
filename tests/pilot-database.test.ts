@@ -114,6 +114,27 @@ void test('fresh migrations enforce invitation integrity and capacity', () => {
       .split('\n');
     assert.deepEqual(schemaCheck, ['2', '1', '1', '1', '2', '2', '2', '1']);
 
+    const preparedPilot = execFileSync('sqlite3', [database], {
+      input: `
+        SELECT response_questions FROM action_cards WHERE id = 'CFJ-A004';
+        SELECT why_it_matters FROM action_cards WHERE id = 'CFJ-A004';
+        SELECT is_preview || '|' || (pilot_terms_approved_at IS NULL)
+          FROM action_cards WHERE id = 'CFJ-A004';
+        SELECT COUNT(*) FROM action_invites WHERE action_id = 'CFJ-A004';
+        SELECT COUNT(*) FROM action_responses WHERE action_id = 'CFJ-A004';
+      `,
+    })
+      .toString()
+      .trim()
+      .split('\n');
+    assert.deepEqual(preparedPilot, [
+      '["After reading the home page, how would you explain Coding for Justice to someone else?","What did the page add, clear up or leave muddled about the goal?","What would you click first?","How does the page feel? What on the page made it feel that way?","Did anything feel unclear, unsafe or pushy?"]',
+      'The invitation gives people the broad aim. The page still needs to make that aim clear, show a useful next step and feel warm rather than official.',
+      '1|1',
+      '0',
+      '0',
+    ]);
+
     const settings = {
       compensation: 'Test pay',
       reviewer: 'Test reviewer',
@@ -377,6 +398,157 @@ void test('fresh migrations enforce invitation integrity and capacity', () => {
     assert.deepEqual(earlierPolicyState, ['0', '1']);
   } finally {
     rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+void test('the warm question migration preserves the closed pilot gates', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'cfj-question-upgrade-'));
+  const database = join(directory, 'test.sqlite');
+  const earlier = migrationNames.filter((name) => name < '0012_');
+  const upgrade = migrationNames.filter((name) => name >= '0012_');
+  try {
+    applySql(database, migrationSql(earlier));
+    const publicationBefore = execFileSync('sqlite3', [database], {
+      input: `
+        SELECT publication_revision || '|' ||
+          COALESCE(published_snapshot_hash, 'NULL')
+        FROM repairs WHERE id = 'CFJ-R002';
+      `,
+    })
+      .toString()
+      .trim();
+
+    applySql(database, migrationSql(upgrade));
+    const state = execFileSync('sqlite3', [database], {
+      input: `
+        SELECT response_questions FROM action_cards WHERE id = 'CFJ-A004';
+        SELECT is_preview || '|' || (pilot_terms_approved_at IS NULL) || '|' ||
+          (pilot_approval_snapshot IS NULL)
+        FROM action_cards WHERE id = 'CFJ-A004';
+        SELECT COUNT(*) FROM action_invites WHERE action_id = 'CFJ-A004';
+        SELECT COUNT(*) FROM action_responses WHERE action_id = 'CFJ-A004';
+        SELECT publication_revision || '|' ||
+          COALESCE(published_snapshot_hash, 'NULL')
+        FROM repairs WHERE id = 'CFJ-R002';
+      `,
+    })
+      .toString()
+      .trim()
+      .split('\n');
+
+    assert.deepEqual(state, [
+      '["After reading the home page, how would you explain Coding for Justice to someone else?","What did the page add, clear up or leave muddled about the goal?","What would you click first?","How does the page feel? What on the page made it feel that way?","Did anything feel unclear, unsafe or pushy?"]',
+      '1|1|1',
+      '0',
+      '0',
+      publicationBefore,
+    ]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+void test('the warm question migration refuses an opened or changed pilot', () => {
+  const earlier = migrationNames.filter((name) => name < '0012_');
+  const upgrade = migrationNames.filter((name) => name >= '0012_');
+  const oldQuestions =
+    '["What do you think this site is?","Who might find this site useful, and why?","What would you click first?","How does the page feel? What on the page made it feel that way?","Did anything feel unclear, unsafe or pushy?"]';
+  const oldReason =
+    'If people cannot say what the site is or what to click, the page is still getting in their way.';
+  const scenarios = [
+    {
+      name: 'approved terms',
+      sql: `
+        UPDATE action_cards
+        SET pilot_terms_approved_at = '2026-08-31T08:00:00.000Z',
+          pilot_approval_snapshot = '{"approved":true}'
+        WHERE id = 'CFJ-A004';
+      `,
+    },
+    {
+      name: 'existing invite',
+      sql: `
+        INSERT INTO action_invites (
+          id, action_id, token_hash, expires_at, created_at
+        ) VALUES (
+          'existing_invite', 'CFJ-A004', '${'d'.repeat(64)}',
+          '2026-09-06T23:59:59.000Z', '2026-08-31T08:00:00.000Z'
+        );
+      `,
+    },
+    {
+      name: 'existing response',
+      sql: `
+        INSERT INTO action_invites (
+          id, action_id, token_hash, expires_at, created_at
+        ) VALUES (
+          'response_invite', 'CFJ-A004', '${'c'.repeat(64)}',
+          '2099-12-31T23:59:59.000Z', '2026-08-31T08:00:00.000Z'
+        );
+        INSERT INTO action_responses (
+          id, action_id, invite_id, questions, answers,
+          consent_private_use, consent_anonymous_summary, confirmed_adult,
+          status, delete_after, created_at, updated_at
+        ) VALUES (
+          'existing_response', 'CFJ-A004', 'response_invite', '[]', '["fake"]',
+          1, 0, 1, 'new', '2099-12-31T23:59:59.000Z',
+          '2026-08-31T08:00:00.000Z', '2026-08-31T08:00:00.000Z'
+        );
+      `,
+    },
+    {
+      name: 'public response path',
+      sql: `UPDATE action_cards SET is_preview = 0 WHERE id = 'CFJ-A004';`,
+    },
+    {
+      name: 'stopped action',
+      sql: `UPDATE action_cards SET status = 'stopped' WHERE id = 'CFJ-A004';`,
+    },
+    {
+      name: 'unexpected wording',
+      sql: `
+        UPDATE action_cards SET response_questions = '["Already changed"]'
+        WHERE id = 'CFJ-A004';
+      `,
+      expected: '["Already changed"]',
+    },
+    {
+      name: 'unexpected reason',
+      sql: `
+        UPDATE action_cards SET why_it_matters = 'Already changed'
+        WHERE id = 'CFJ-A004';
+      `,
+      expectedReason: 'Already changed',
+    },
+  ];
+
+  for (const scenario of scenarios) {
+    const directory = mkdtempSync(join(tmpdir(), 'cfj-question-guard-'));
+    const database = join(directory, 'test.sqlite');
+    try {
+      applySql(database, migrationSql(earlier));
+      applySql(database, scenario.sql);
+      applySql(database, migrationSql(upgrade));
+      const state = execFileSync('sqlite3', [database], {
+        input: `
+          SELECT response_questions FROM action_cards WHERE id = 'CFJ-A004';
+          SELECT why_it_matters FROM action_cards WHERE id = 'CFJ-A004';
+        `,
+      })
+        .toString()
+        .trim()
+        .split('\n');
+      assert.deepEqual(
+        state,
+        [
+          scenario.expected ?? oldQuestions,
+          scenario.expectedReason ?? oldReason,
+        ],
+        scenario.name,
+      );
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   }
 });
 

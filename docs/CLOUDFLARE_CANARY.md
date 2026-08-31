@@ -1,9 +1,25 @@
-# Private Cloudflare timer test
+# Cloudflare retention timer record
 
-**Plan only. This page does not give permission to deploy, publish, change DNS,
-open invitations or use real replies.**
+This evidence record does not give permission to open invitations, collect
+replies, publish a result or change DNS.
 
-## Latest private result
+## Production Site timer result
+
+**Healthy when last checked at 07:45:15 UTC on 31 August 2026.** The live Site
+database showed the `action_responses` retention sweep had completed 42 times.
+The latest run deleted zero records and had no latest error. The protected page
+test still had zero invitations, zero responses and zero retention events.
+
+The separate route-less Cloudflare Worker calls the Site's protected retention
+route every 15 minutes using a shared secret. The Worker's public address,
+version preview addresses and custom routes remain off. Normal Site requests
+repeat the deletion check as a backup.
+
+This proves that the production timer can reach the Site deletion path and
+record a content-free heartbeat. It does not approve the exact page-test terms,
+create a link, collect a reply or prove that a justice repair has worked.
+
+## Earlier isolated timer result
 
 **Passed on 30 August 2026.** After the full setup delay, Cloudflare ran the
 route-less Worker at the 18:30 and 18:45 UTC slots without an error. The remote
@@ -16,27 +32,27 @@ and both the production `workers.dev` address and version preview addresses
 disabled. The account namespace exists only because Cloudflare requires it to
 attach a Cron Trigger.
 
-This result proves direct Cloudflare scheduling only. It does not prove the
-owner-only Site's timer, open invitations, make anything public or approve a
-DNS change. Detailed live IDs and timestamped checkpoints remain in the local,
+That earlier result proved direct Cloudflare scheduling only. It did not prove
+the Site-linked timer, open invitations, make anything public or approve a DNS
+change. Detailed live IDs and timestamped checkpoints remain in the local,
 ignored evidence file.
 
-## What is this?
+The remaining isolated-test instructions are kept below as a historical and
+repeatable safety record. They are not the current production architecture.
 
-It is one small test. It asks: **will Cloudflare run our automatic deletion job
+## What was the first test?
+
+It was one small test. It asked: **will Cloudflare run our automatic deletion job
 every 15 minutes?**
 
-The owner-only Site has not proved that its hosted timer runs. The code works in
-local tests, but that is not the same thing as an unattended job on a host.
+## Why was it useful?
 
-## Why is it useful?
+Two unattended runs showed that Cloudflare could run the Worker timer when it
+was deployed directly. That found hosting faults before any private reply was
+accepted.
 
-If the Cloudflare test runs twice by itself, we know the Worker can run its timer
-when it is deployed directly. If it does not, we have found a real fault before
-any private reply is accepted.
-
-This test does not prove that Sites installed the timer. It does not make the
-Site ready for the public. It does not unlock invitations.
+That test did not prove the later Site-linked path and did not unlock
+invitations.
 
 ## What do I do?
 
@@ -98,7 +114,7 @@ A pass proves direct Cloudflare scheduling only. Real invitations remain
 locked. A later public move still needs a new hosting decision, a fresh release
 packet and separate access and DNS approvals.
 
-## Owner web check — only after the timer passes
+## Owner web check: only after the timer passes
 
 If the owner separately approves a private web check:
 
